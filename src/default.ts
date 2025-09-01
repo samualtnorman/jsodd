@@ -2,9 +2,11 @@ import { t } from "try"
 
 const regExpSourceGetter = Object.getOwnPropertyDescriptor(RegExp.prototype, "source")!.get!
 const regExpFlagsGetter = Object.getOwnPropertyDescriptor(RegExp.prototype, "flags")!.get!
+const errorStackGetter = Object.getOwnPropertyDescriptor(Error(), `stack`)?.get || Object.getOwnPropertyDescriptor(Error.prototype, `stack`)?.get
 
 const getRegExpSource = (regex: unknown): string => regExpSourceGetter.call(regex)
 const getRegExpFlags = (regex: unknown): string => regExpFlagsGetter.call(regex)
+const getErrorStack = (error: unknown): string | undefined => errorStackGetter?.call(error)
 
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
 
@@ -153,6 +155,11 @@ export function toDebugString(
 				if (isMap)
 					o += `Map `
 
+				const [ ,, stack ] = t(() => getErrorStack(value))
+
+				if (stack != undefined)
+					o += `Error `
+
 				o += Array.isArray(value) ? `[` : `{`
 
 				indentLevel++
@@ -200,6 +207,9 @@ export function toDebugString(
 						stringify(value, `${valueName}.<entry ${index} value>`)
 					}
 				}
+
+				if (stack != undefined)
+					o += `\n${indent()}<stack>: ${JSON.stringify(stack)}`
 
 				const prototype = Object.getPrototypeOf(value)
 
@@ -493,6 +503,18 @@ if (import.meta.vitest) {
 				<entry 0 key>: "foo"
 				<entry 0 value>: "bar"
 				<prototype>: null
+			}"
+		`)
+	})
+
+	test(`error`, () => {
+		expect(toDebugString(Error(`foo`))).toMatchInlineSnapshot(`
+			"Error {
+				unenumerable get stack: function ""(0) {}
+				unenumerable set stack: function ""(1) {}
+				unenumerable message: "foo"
+				<stack>: "Error: foo\\n    at /home/samual/Git/samual/jsodd/src/default.ts:511:24\\n    at file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11\\n    at file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26\\n    at file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20\\n    at new Promise (<anonymous>)\\n    at runWithTimeout (file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)\\n    at runTest (file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at runSuite (file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)\\n    at runFiles (file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1787:3)"
+				<prototype>: Error.prototype
 			}"
 		`)
 	})
