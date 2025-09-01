@@ -9,9 +9,6 @@
 	"author": "Samual Norman",
 	"license": "MIT",
 	"type": "module",
-	"dependencies": {
-		"try": "1.0.0-beta.10"
-	},
 	"devDependencies": {
 		"tsdown": "^0.14.2",
 		"typescript": "^5.9.2",

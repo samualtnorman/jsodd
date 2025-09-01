@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      try:
-        specifier: 1.0.0-beta.10
-        version: 1.0.0-beta.10
     devDependencies:
       tsdown:
         specifier: ^0.14.2
@@ -678,9 +674,6 @@ packages:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
 
-  try@1.0.0-beta.10:
-    resolution: {integrity: sha512-g/I/r0keF5pnxdMO4PJ1K7+c+N1U0Q0xtNDfrI/1UQz6q/85ipgbL4bSnowAy1DSAIfHkDiaARihADoqGM2qeA==}
-
   tsdown@0.14.2:
     resolution: {integrity: sha512-6ThtxVZoTlR5YJov5rYvH8N1+/S/rD/pGfehdCLGznGgbxz+73EASV1tsIIZkLw2n+SXcERqHhcB/OkyxdKv3A==}
     engines: {node: '>=20.19.0'}
@@ -1323,8 +1316,6 @@ snapshots:
   tinyspy@4.0.3: {}
 
   tree-kill@1.2.2: {}
-
-  try@1.0.0-beta.10: {}
 
   tsdown@0.14.2(typescript@5.9.2):
     dependencies:

@@ -1,12 +1,37 @@
-import { t } from "try"
+const tryCatch = <TExecutorReturn, TOnErrorReturn = undefined>(
+	executor: () => TExecutorReturn,
+	onError?: (error: unknown) => TOnErrorReturn
+): TExecutorReturn | TOnErrorReturn => {
+	try {
+		return executor()
+	} catch (error) {
+		return onError?.(error) as any
+	}
+}
+const TypedArray = Object.getPrototypeOf(Uint8Array)
+const GeneratorFunction = (function* () {}).constructor
+const GeneratorPrototype = GeneratorFunction.prototype.prototype
+const AsyncFunction = (async () => {}).constructor
+const AsyncGenerator = Object.getPrototypeOf((async function* () {}).prototype).constructor
 
 const regExpSourceGetter = Object.getOwnPropertyDescriptor(RegExp.prototype, "source")!.get!
 const regExpFlagsGetter = Object.getOwnPropertyDescriptor(RegExp.prototype, "flags")!.get!
 const errorStackGetter = Object.getOwnPropertyDescriptor(Error(), `stack`)?.get || Object.getOwnPropertyDescriptor(Error.prototype, `stack`)?.get
+const arrayBufferByteLengthGetter = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, `byteLength`)!.get!
+const TypedArrayPrototypeDescriptors = Object.getOwnPropertyDescriptors(TypedArray.prototype) as any
 
 const getRegExpSource = (regex: unknown): string => regExpSourceGetter.call(regex)
 const getRegExpFlags = (regex: unknown): string => regExpFlagsGetter.call(regex)
 const getErrorStack = (error: unknown): string | undefined => errorStackGetter?.call(error)
+const getArrayBufferByteLength = (value: unknown): number | undefined => arrayBufferByteLengthGetter.call(value)
+
+const getTypedArrayAttributes = (value: unknown) => tryCatch(() => ({
+	buffer: TypedArrayPrototypeDescriptors.buffer.get.call(value),
+	byteLength: TypedArrayPrototypeDescriptors.byteLength.get.call(value),
+	byteOffset: TypedArrayPrototypeDescriptors.byteOffset.get.call(value),
+	length: TypedArrayPrototypeDescriptors.length.get.call(value),
+	tag: TypedArrayPrototypeDescriptors[Symbol.toStringTag].get.call(value) as string
+}))
 
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
 
@@ -23,12 +48,6 @@ const symbolToDebugString = (symbol: symbol, names: Map<unknown, string>, valueN
 
 	return `Symbol(${symbol.description == null ? `` : JSON.stringify(symbol.description)})`
 }
-
-const TypedArray = Object.getPrototypeOf(Uint8Array)
-const GeneratorFunction = (function* () {}).constructor
-const GeneratorPrototype = GeneratorFunction.prototype.prototype
-const AsyncFunction = (async () => {}).constructor
-const AsyncGenerator = Object.getPrototypeOf((async function* () {}).prototype).constructor
 
 const defaultDebugNames = getDebugNames({
 	Function,
@@ -76,6 +95,12 @@ const defaultDebugNames = getDebugNames({
 	WeakMap,
 	WeakSet,
 
+	ArrayBuffer,
+	SharedArrayBuffer,
+	DataView,
+	Atomics,
+	JSON,
+
 	eval,
 	isFinite,
 	isNaN,
@@ -88,7 +113,6 @@ const defaultDebugNames = getDebugNames({
 	escape,
 	unescape,
 
-	ArrayBuffer,
 	AsyncDisposableStack,
 	"<AsyncFunction>": AsyncFunction,
 	"<AsyncGenerator>": AsyncGenerator,
@@ -134,34 +158,60 @@ export function toDebugString(
 				if (typeof value == `function`) {
 					o += `function `
 
-					if (descriptors.name && !descriptors.name.writable && !descriptors.name.enumerable && descriptors.name.configurable) {
+					if (typeof descriptors.name?.value == `string` && !descriptors.name.writable && !descriptors.name.enumerable && descriptors.name.configurable) {
 						o += formatName(descriptors.name.value)
 						delete descriptors.name
 					}
 
-					if (descriptors.length && !descriptors.length.writable && !descriptors.length.enumerable && descriptors.length.configurable) {
+					if (typeof descriptors.length?.value == `number` && !descriptors.length.writable && !descriptors.length.enumerable && descriptors.length.configurable) {
 						o += `(${descriptors.length.value}) `
 						delete descriptors.length
 					}
 				}
 
-				const [ isRegex,, regexSource ] = t(() => `/${getRegExpSource(value)}/${getRegExpFlags(value)} `)
+				const regexSource = tryCatch(() => `/${getRegExpSource(value)}/${getRegExpFlags(value)} `)
 
-				if (isRegex)
+				if (regexSource != undefined)
 					o += regexSource
 
-				const [ isMap,, mapEntries ] = t(() => Map.prototype.entries.call(value).map(([ key, value ], index) => [ index, key, value ]).toArray())
+				const mapEntries = tryCatch(() => Map.prototype.entries.call(value).map(([ key, value ], index) => [ index, key, value ]).toArray())
 
-				if (isMap)
+				if (mapEntries)
 					o += `Map `
 
-				const [ ,, stack ] = t(() => getErrorStack(value))
+				const stack = tryCatch(() => getErrorStack(value))
 
 				if (stack != undefined)
 					o += `Error `
 
-				o += Array.isArray(value) ? `[` : `{`
+				const setValues = tryCatch(() => Set.prototype.values.call(value).map((value, index) => [ index, value ]).toArray())
 
+				if (setValues)
+					o += `Set `
+
+				const isWeakMap = tryCatch(() => !WeakMap.prototype.has.call(value, undefined as any), () => false)
+
+				if (isWeakMap)
+					o += `WeakMap `
+
+				const isWeakSet = tryCatch(() => !WeakSet.prototype.has.call(value, undefined as any), () => false)
+
+				if (isWeakSet)
+					o += `WeakSet `
+
+				const arrayBufferByteLength = tryCatch(() => getArrayBufferByteLength(value))
+
+				if (arrayBufferByteLength != undefined)
+					o += `ArrayBuffer `
+
+				const typedArrayAttributes = getTypedArrayAttributes(value)
+
+				if (typedArrayAttributes)
+					o += `${typedArrayAttributes.tag} `
+
+				const isArray = Array.isArray(value) || typedArrayAttributes
+
+				o += isArray ? `[` : `{`
 				indentLevel++
 
 				const keys = [ ...Object.getOwnPropertyNames(descriptors), ...Object.getOwnPropertySymbols(descriptors) ]
@@ -180,26 +230,41 @@ export function toDebugString(
 					if (descriptor.writable == false && !Object.isFrozen(value))
 						prefix += `readonly `
 
-					const keyString = typeof key == `symbol` ? `[${names.has(key) ? names.get(key)! : `${symbolToDebugString(key, names, `symbol *${++symbolReferenceCount}`)} *${symbolReferenceCount}`}]` : formatName(key)
+					let keyString
+					let keyName
+
+					if (typeof key == `symbol`) {
+						const symbolKey = Symbol.keyFor(key)
+
+						if (symbolKey != undefined)
+							keyString = keyName = `[Symbol.for(${JSON.stringify(symbolKey)})]`
+						else if (names.has(key))
+							keyString = keyName = `[${names.get(key)!}]`
+						else {
+							keyString = `[${symbolToDebugString(key, names, `<symbol *${++symbolReferenceCount}>`)} *${symbolReferenceCount}]`
+							keyName = `[<symbol *${symbolReferenceCount}>]`
+						}
+					} else
+						keyString = keyName = formatName(key)
 
 					if ("value" in descriptor) {
 						o += `${prefix}${keyString}: `
 
-						stringify(descriptor.value, `${valueName}.${keyString}`)
+						stringify(descriptor.value, `${valueName}${valueName && valueName != `.` && keyName[0] == `[` ? `` : `.`}${keyName}`)
 					} else {
 						if (descriptor.get != undefined) {
 							o += `${prefix}get ${keyString}: `
-							stringify(descriptor.get, `${valueName}.<get ${keyString}>`)
+							stringify(descriptor.get, `${valueName}.<get ${keyName}>`)
 						}
 
 						if (descriptor.set != undefined) {
 							o += `${prefix}set ${keyString}: `
-							stringify(descriptor.set, `${valueName}.<set ${keyString}>`)
+							stringify(descriptor.set, `${valueName}.<set ${keyName}>`)
 						}
 					}
 				}
 
-				if (isMap) {
+				if (mapEntries) {
 					for (const [ index, key, value ] of mapEntries) {
 						o += `\n${indent()}<entry ${index} key>: `
 						stringify(key, `${valueName}.<entry ${index} key>`)
@@ -208,20 +273,63 @@ export function toDebugString(
 					}
 				}
 
+				if (setValues) {
+					for (const [ index, value ] of setValues) {
+						o += `\n${indent()}<entry ${index}>: `
+						stringify(value, `${valueName}.<entry ${index}>`)
+					}
+				}
+
 				if (stack != undefined)
 					o += `\n${indent()}<stack>: ${JSON.stringify(stack)}`
+
+				if (arrayBufferByteLength != undefined) {
+					o += `\n${indent()}<byteLength>: ${arrayBufferByteLength}\n${indent()}<content>: <${
+						[ ...new Uint8Array(value as any) ].map(byte => byte.toString(16).toUpperCase().padStart(2, `0`)).join(` `)
+					}>`
+				}
+
+				if (typedArrayAttributes) {
+					o += `\n${indent()}<buffer>: `
+					stringify(typedArrayAttributes.buffer, `${valueName}.<buffer>`)
+					o += `\n${indent()}<byteLength>: ${typedArrayAttributes.byteLength}\n${indent()}<byteOffset>: ${typedArrayAttributes.byteOffset}\n${indent()}<length>: ${typedArrayAttributes.length}`
+				}
 
 				const prototype = Object.getPrototypeOf(value)
 
 				const expectedPrototype =
-					isMap ?
+					mapEntries ?
 						Map.prototype
 					: typeof value == `function` ?
 						Function.prototype
 					: Array.isArray(value) ?
 						Array.prototype
+					: stack != undefined ?
+						Error.prototype
+					: setValues ?
+						Set.prototype
+					: isWeakMap ?
+						WeakMap.prototype
+					: isWeakSet ?
+						WeakSet.prototype
+					: arrayBufferByteLength ?
+						ArrayBuffer.prototype
+					: typedArrayAttributes ?
+						{
+							Int8Array: Int8Array.prototype,
+							Uint8Array: Uint8Array.prototype,
+							Uint8ClampedArray: Uint8ClampedArray.prototype,
+							Int16Array: Int16Array.prototype,
+							Uint16Array: Uint16Array.prototype,
+							Int32Array: Int32Array.prototype,
+							Uint32Array: Uint32Array.prototype,
+							BigInt64Array: BigInt64Array.prototype,
+							BigUint64Array: BigUint64Array.prototype,
+							Float16Array: Float16Array.prototype,
+							Float32Array: Float32Array.prototype,
+							Float64Array: Float64Array.prototype,
+						}[typedArrayAttributes.tag]
 					: Object.prototype
-
 
 				if (prototype != expectedPrototype) {
 					o += `\n${indent()}<prototype>: `
@@ -230,10 +338,10 @@ export function toDebugString(
 
 				indentLevel--
 
-				if (keys.length || mapEntries?.length || prototype != expectedPrototype)
+				if (keys.length || mapEntries?.length || prototype != expectedPrototype || stack != undefined || setValues?.length || arrayBufferByteLength != undefined || typedArrayAttributes)
 					o += `\n${indent()}`
 
-				o += `${Array.isArray(value) ? `]` : `}`}`
+				o += isArray ? `]` : `}`
 			}
 		} else
 			o += String(value)
@@ -344,7 +452,7 @@ if (import.meta.vitest) {
 
 		expect(toDebugString({ [symbol]: symbol })).toMatchInlineSnapshot(`
 			"{
-				[Symbol("foo") *1]: symbol *1
+				[Symbol("foo") *1]: <symbol *1>
 			}"
 		`)
 	})
@@ -355,10 +463,10 @@ if (import.meta.vitest) {
 		expect(toDebugString({ a: { [symbol]: symbol }, b: { [symbol]: symbol } })).toMatchInlineSnapshot(`
 			"{
 				a: {
-					[Symbol("foo") *1]: symbol *1
+					[Symbol("foo") *1]: <symbol *1>
 				}
 				b: {
-					[symbol *1]: symbol *1
+					[<symbol *1>]: <symbol *1>
 				}
 			}"
 		`)
@@ -507,14 +615,125 @@ if (import.meta.vitest) {
 		`)
 	})
 
-	test(`error`, () => {
-		expect(toDebugString(Error(`foo`))).toMatchInlineSnapshot(`
-			"Error {
-				unenumerable get stack: function ""(0) {}
-				unenumerable set stack: function ""(1) {}
-				unenumerable message: "foo"
-				<stack>: "Error: foo\\n    at /home/samual/Git/samual/jsodd/src/default.ts:511:24\\n    at file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11\\n    at file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26\\n    at file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20\\n    at new Promise (<anonymous>)\\n    at runWithTimeout (file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)\\n    at runTest (file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)\\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at runSuite (file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)\\n    at runFiles (file:///home/samual/Git/samual/jsodd/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1787:3)"
-				<prototype>: Error.prototype
+	test(`set`, () => {
+		expect(toDebugString(new Set([ `foo`, `bar`, `baz` ]))).toMatchInlineSnapshot(`
+			"Set {
+				<entry 0>: "foo"
+				<entry 1>: "bar"
+				<entry 2>: "baz"
+			}"
+		`)
+	})
+
+	test(`array buffer`, () => {
+		expect(toDebugString(new Uint8Array([ 1, 2, 3 ]).buffer)).toMatchInlineSnapshot(`
+			"ArrayBuffer {
+				<byteLength>: 3
+				<content>: <01 02 03>
+			}"
+		`)
+	})
+
+	test(`byte array`, () => {
+		expect(toDebugString(new Uint8Array([ 1, 2, 3 ]))).toMatchInlineSnapshot(`
+			"Uint8Array [
+				0: 1
+				1: 2
+				2: 3
+				<buffer>: ArrayBuffer {
+					<byteLength>: 3
+					<content>: <01 02 03>
+				}
+				<byteLength>: 3
+				<byteOffset>: 0
+				<length>: 3
+			]"
+		`)
+	})
+
+	test(`registry symbol as key`, () => {
+		expect(toDebugString({ [Symbol.for(`foo`)]: 0 })).toMatchInlineSnapshot(`
+			"{
+				[Symbol.for("foo")]: 0
+			}"
+		`)
+	})
+
+	test(`symbol key to symbol key to symbol key`, () => {
+		const a = Symbol(`a`)
+		const b = Symbol(`b`)
+		const c = Symbol(`c`)
+
+		expect(toDebugString({
+			[a]: b,
+			[b]: c,
+			[c]: a
+		})).toMatchInlineSnapshot(`
+			"{
+				[Symbol("a") *1]: Symbol("b")
+				[.[<symbol *1>]]: Symbol("c")
+				[.[.[<symbol *1>]]]: <symbol *1>
+			}"
+		`)
+	})
+
+	test(`nested symbol key to symbol key to symbol key`, () => {
+		const a = Symbol(`a`)
+		const b = Symbol(`b`)
+		const c = Symbol(`c`)
+
+		expect(toDebugString({
+			foo: {
+				[a]: b,
+				[b]: c,
+				[c]: a
+			}
+		})).toMatchInlineSnapshot(`
+			"{
+				foo: {
+					[Symbol("a") *1]: Symbol("b")
+					[.foo[<symbol *1>]]: Symbol("c")
+					[.foo[.foo[<symbol *1>]]]: <symbol *1>
+				}
+			}"
+		`)
+	})
+
+	test(`object nested in symbol keys`, () => {
+		const foo = {}
+
+		expect(toDebugString({
+			[Symbol.for(`foo`)]: { [Symbol.for(`bar`)]: foo },
+			[Symbol.for(`bar`)]: foo
+		})).toMatchInlineSnapshot(`
+			"{
+				[Symbol.for("foo")]: {
+					[Symbol.for("bar")]: {}
+				}
+				[Symbol.for("bar")]: .[Symbol.for("foo")][Symbol.for("bar")]
+			}"
+		`)
+	})
+
+	test(`array`, () => {
+		expect(toDebugString([ 1, 2, 3 ])).toMatchInlineSnapshot(`
+			"[
+				0: 1
+				1: 2
+				2: 3
+				unconfigurable unenumerable length: 3
+			]"
+		`)
+	})
+
+	test(`function with overriden name and length`, () => {
+		expect(toDebugString(Object.defineProperties(() => {}, {
+			name: { get: () => {} },
+			length: { get: () => {} }
+		}))).toMatchInlineSnapshot(`
+			"function {
+				unenumerable get length: function get(0) {}
+				unenumerable get name: function get(0) {}
 			}"
 		`)
 	})
