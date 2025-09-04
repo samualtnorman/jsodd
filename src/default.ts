@@ -418,9 +418,8 @@ export const toDebugString = (value: unknown, {
 					} else
 						keyString = keyName = formatName(key)
 
-					const getExpectedFunctionName = (key: string | symbol): string => {
-						return typeof key == `string` ? key : `[${WellKnownSymbols.get(key) || key.description}]`
-					}
+					const expectedFunctionName =
+						typeof key == `string` ? key : `[${WellKnownSymbols.get(key) || key.description}]`
 
 					const stringifyKeyAndValue = (value: unknown, expectedFunctionName: string, name: string) => {
 						let isTerseMethod = false
@@ -440,16 +439,16 @@ export const toDebugString = (value: unknown, {
 
 					if ("value" in descriptor) {
 						o += `${prefix}${keyString}`
-						stringifyKeyAndValue(descriptor.value, getExpectedFunctionName(key), `${valueName}${valueName && valueName != `.` && keyName[0] == `[` ? `` : `.`}${keyName}`)
+						stringifyKeyAndValue(descriptor.value, expectedFunctionName, `${valueName}${valueName && valueName != `.` && keyName[0] == `[` ? `` : `.`}${keyName}`)
 					} else {
 						if (descriptor.get) {
 							o += `${prefix}get ${keyString}`
-							stringifyKeyAndValue(descriptor.get, `get ${getExpectedFunctionName(key)}`, `${valueName}.<get ${keyName}>`)
+							stringifyKeyAndValue(descriptor.get, `get ${expectedFunctionName}`, `${valueName}.<get ${keyName}>`)
 						}
 
 						if (descriptor.set) {
 							o += `${prefix}set ${keyString}`
-							stringifyKeyAndValue(descriptor.set, `set ${getExpectedFunctionName(key)}`, `${valueName}.<set ${keyName}>`)
+							stringifyKeyAndValue(descriptor.set, `set ${expectedFunctionName}`, `${valueName}.<set ${keyName}>`)
 						}
 					}
 				}
