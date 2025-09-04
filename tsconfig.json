@@ -9,7 +9,7 @@
 		// See also https://aka.ms/tsconfig/module
 		"module": "nodenext",
 		"target": "esnext",
-		"types": [ "@total-typescript/ts-reset" ],
+		"types": [ "node", "@total-typescript/ts-reset" ],
 		// For nodejs:
 		// "lib": ["esnext"],
 		// "types": ["node"],
@@ -36,6 +36,6 @@
 		"isolatedModules": true,
 		"noUncheckedSideEffectImports": true,
 		"moduleDetection": "force",
-		"skipLibCheck": false
+		"skipLibCheck": true
 	}
 }
