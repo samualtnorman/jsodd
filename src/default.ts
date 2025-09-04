@@ -1,36 +1,53 @@
-const tryCatch = <TExecutorReturn, TOnErrorReturn = undefined>(
-	executor: () => TExecutorReturn,
-	onError?: (error: unknown) => TOnErrorReturn
-): TExecutorReturn | TOnErrorReturn => {
+import type { LaxPartial } from "@samual/types"
+
+const tryCatch: {
+	<T>(executor: () => T): T | undefined
+	<TExecutorReturn, TOnErrorReturn>(
+		executor: () => TExecutorReturn,
+		onError: (error: unknown) => TOnErrorReturn
+	): TExecutorReturn | TOnErrorReturn
+} = (executor: () => unknown, onError?: (error: any) => unknown) => {
 	try {
 		return executor()
 	} catch (error) {
-		return onError?.(error) as any
+		return onError?.(error)
 	}
 }
-const TypedArray = Object.getPrototypeOf(Uint8Array)
+
+/** `Object.isFrozen()` is bugged in V8, looks like it ignores the `.prototype` property or something. */
+const isActuallyFrozen = (target: object) => !Reflect.isExtensible(target) && Reflect.ownKeys(target).every(key => {
+	const { configurable, writable } = Reflect.getOwnPropertyDescriptor(target, key)!
+
+	return !(configurable || writable)
+})
+
+const TypedArray = Object.getPrototypeOf(Uint8Array) as { prototype: {} }
 const GeneratorFunction = (function* () {}).constructor
 const GeneratorPrototype = GeneratorFunction.prototype.prototype
 const AsyncFunction = (async () => {}).constructor
-const AsyncGenerator = Object.getPrototypeOf((async function* () {}).prototype).constructor
+const AsyncGenerator = Object.getPrototypeOf((async function* () {}).prototype)!.constructor
 
-const regExpSourceGetter = Object.getOwnPropertyDescriptor(RegExp.prototype, "source")!.get!
-const regExpFlagsGetter = Object.getOwnPropertyDescriptor(RegExp.prototype, "flags")!.get!
-const errorStackGetter = Object.getOwnPropertyDescriptor(Error(), `stack`)?.get || Object.getOwnPropertyDescriptor(Error.prototype, `stack`)?.get
-const arrayBufferByteLengthGetter = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, `byteLength`)!.get!
-const TypedArrayPrototypeDescriptors = Object.getOwnPropertyDescriptors(TypedArray.prototype) as any
+const regExpSourceGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, "source")!.get!
+const regExpFlagsGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, "flags")!.get!
+const errorStackGetter = Reflect.getOwnPropertyDescriptor(Error(), `stack`)?.get || Reflect.getOwnPropertyDescriptor(Error.prototype, `stack`)?.get
+const arrayBufferByteLengthGetter = Reflect.getOwnPropertyDescriptor(ArrayBuffer.prototype, `byteLength`)!.get!
 
-const getRegExpSource = (regex: unknown): string => regExpSourceGetter.call(regex)
-const getRegExpFlags = (regex: unknown): string => regExpFlagsGetter.call(regex)
-const getErrorStack = (error: unknown): string | undefined => errorStackGetter?.call(error)
-const getArrayBufferByteLength = (value: unknown): number | undefined => arrayBufferByteLengthGetter.call(value)
+Function.prototype.call.bind(regExpSourceGetter)
+
+const getRegExpSource = (regex: unknown) => regExpSourceGetter.call(regex) as string
+const getRegExpFlags = (regex: unknown) => regExpFlagsGetter.call(regex) as string
+const getErrorStack = (error: unknown) => tryCatch(() => errorStackGetter?.call(error) as string | undefined)
+const getArrayBufferByteLength = (value: unknown) => tryCatch(() => arrayBufferByteLengthGetter.call(value) as number)
+
+type AnyTypedArray = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | BigInt64Array |
+	BigUint64Array | Float16Array | Float32Array | Float64Array
 
 const getTypedArrayAttributes = (value: unknown) => tryCatch(() => ({
-	buffer: TypedArrayPrototypeDescriptors.buffer.get.call(value),
-	byteLength: TypedArrayPrototypeDescriptors.byteLength.get.call(value),
-	byteOffset: TypedArrayPrototypeDescriptors.byteOffset.get.call(value),
-	length: TypedArrayPrototypeDescriptors.length.get.call(value),
-	tag: TypedArrayPrototypeDescriptors[Symbol.toStringTag].get.call(value) as string
+	buffer: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, `buffer`)!.get!.call(value) as AnyTypedArray["buffer"],
+	byteLength: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteLength")!.get!.call(value) as AnyTypedArray["byteLength"],
+	byteOffset: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteOffset")!.get!.call(value) as AnyTypedArray["byteOffset"],
+	length: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "length")!.get!.call(value) as AnyTypedArray["length"],
+	tag: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag)!.get!.call(value) as AnyTypedArray[typeof Symbol.toStringTag]
 }))
 
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
@@ -49,7 +66,100 @@ const symbolToDebugString = (symbol: symbol, names: Map<unknown, string>, valueN
 	return `Symbol(${symbol.description == null ? `` : JSON.stringify(symbol.description)})`
 }
 
-const defaultDebugNames = getDebugNames({
+export type FriendlyNames = { map: Map<object | symbol, string>, symbolReferenceCount: number }
+
+export const cloneFriendlyNames = ({ map = new Map, symbolReferenceCount = 0 }: FriendlyNames) =>
+	({ map: new Map(map), symbolReferenceCount })
+
+export const mapFriendlyNames = (values: Record<string, object | symbol>): FriendlyNames => {
+	const names = new Map<object | symbol, string>
+	let symbolReferenceCount = 0
+
+	const nameKey = (key: string | symbol): string => {
+		if (typeof key == `string`)
+			return key
+
+		const symbolKey = Symbol.keyFor(key)
+
+		if (symbolKey)
+			return `[Symbol.for(${JSON.stringify(symbolKey)})]`
+
+		if (names.has(key))
+			return `[${names.get(key)}]`
+
+		const name = `Symbol(${key.description == null ? `` : JSON.stringify(key.description)}) *${++symbolReferenceCount}`
+
+		names.set(key, name)
+
+		return `[${name}]`
+	}
+
+	const queue: { name: string, value: object }[] = Object.entries(values).map(([ name, value ]) => {
+		names.set(value, name)
+
+		return ({ name, value })
+	}).filter(Boolean)
+
+	while (queue.length) {
+		const item = queue.shift()!
+
+		for (const key of Reflect.ownKeys(item.value)) {
+			const descriptor = Reflect.getOwnPropertyDescriptor(item.value, key)!
+			const keyName = nameKey(key)
+
+			if ("value" in descriptor) {
+				if (
+					descriptor.value &&
+					(typeof descriptor.value == `object` || typeof descriptor.value == `function` || typeof descriptor.value == `symbol`) &&
+					!names.has(descriptor.value)
+				) {
+					const valueName = `${item.name}${keyName[0] == `[` ? `` : `.`}${keyName}`
+
+					names.set(descriptor.value, valueName)
+
+					if (typeof descriptor.value != `symbol`)
+						queue.push({ name: valueName, value: descriptor.value })
+				}
+			} else {
+				if (descriptor.get && !names.has(descriptor.get)) {
+					const valueName = `${item.name}.<get ${keyName}>`
+
+					names.set(descriptor.get, valueName)
+					queue.push({ name: valueName, value: descriptor.get })
+				}
+
+				if (descriptor.set && !names.has(descriptor.set)) {
+					const valueName = `${item.name}.<set ${keyName}>`
+
+					names.set(descriptor.set, valueName)
+					queue.push({ name: valueName, value: descriptor.set })
+				}
+			}
+		}
+
+		const prototype = Object.getPrototypeOf(item.value)
+
+		if (prototype && !names.has(prototype)) {
+			const prototypeName = `${item.name}.<prototype>`
+
+			names.set(prototype, prototypeName)
+			queue.push({ name: prototypeName, value: prototype })
+		}
+	}
+
+	return { map: names, symbolReferenceCount }
+}
+
+const functionNameOrLengthDescriptorIsProper = (function_: object, descriptor: LoosePropertyDescriptor) =>
+	!descriptor.enumerable && !descriptor.writable && descriptor.configurable != Object.isSealed(function_)
+
+const functionNameDescriptorIsProper = (function_: object, descriptor?: LoosePropertyDescriptor): descriptor is { value: string } =>
+	typeof descriptor?.value == `string` && functionNameOrLengthDescriptorIsProper(function_, descriptor)
+
+const functionLengthDescriptorIsProper = (function_: object, descriptor?: LoosePropertyDescriptor): descriptor is { value: number } =>
+	typeof descriptor?.value == `number` && functionNameOrLengthDescriptorIsProper(function_, descriptor)
+
+const builtinFriendlyNames = mapFriendlyNames({
 	Function,
 	Object,
 	Boolean,
@@ -121,51 +231,68 @@ const defaultDebugNames = getDebugNames({
 	"<GeneratorPrototype>": GeneratorPrototype
 })
 
-export function toDebugString(
-	value: unknown,
-	{ indentLevel = 0, indentString = `\t`, names = new Map(defaultDebugNames), valueName = ``, symbolReferenceCount = 0 } = {}
-): string {
+type ToDebugStringOptions = LaxPartial<{
+	indentLevel: number
+	indentString: string
+	friendlyNames: FriendlyNames
+	valueName: string
+}>
+
+export const toDebugString = (value: unknown, {
+	indentLevel = 0,
+	indentString = `\t`,
+	friendlyNames = cloneFriendlyNames(builtinFriendlyNames),
+	valueName = ``,
+}: ToDebugStringOptions = {}): string => {
 	let o = ``
 
 	stringify(value, valueName)
 
 	return o
 
-	function stringify(value: unknown, valueName: string): void {
+	function stringify(value: unknown, valueName: string, isTerseMethod?: boolean): void {
 		if (typeof value == `bigint`)
 			o += `${value}n`
 		else if (typeof value == `string`)
 			o += JSON.stringify(value)
 		else if (typeof value == `symbol`)
-			o += symbolToDebugString(value, names, valueName)
+			o += symbolToDebugString(value, friendlyNames.map, valueName)
 		else if (typeof value == `function` || (value && typeof value == `object`)) {
-			if (names.has(value))
-				o += names.get(value)!
+			if (friendlyNames.map.has(value))
+				o += friendlyNames.map.get(value)!
 			else {
 				const indent = () => indentString.repeat(indentLevel)
 
-				names.set(value, valueName || `.`)
+				friendlyNames.map.set(value, valueName || `.`)
 
-				if (Object.isFrozen(value))
+				if (isActuallyFrozen(value))
 					o += `frozen `
 				else if (Object.isSealed(value))
 					o += `sealed `
-				else if (!Object.isExtensible(value))
+				else if (!Reflect.isExtensible(value))
 					o += `unextensible `
 
-				const descriptors = Object.getOwnPropertyDescriptors(value) as Record<keyof any, PropertyDescriptor>
+				const keys = new Set(Reflect.ownKeys(value))
 
 				if (typeof value == `function`) {
-					o += `function `
+					if (isTerseMethod)
+						keys.delete(`name`)
+					else {
+						o += `function `
 
-					if (typeof descriptors.name?.value == `string` && !descriptors.name.writable && !descriptors.name.enumerable && descriptors.name.configurable) {
-						o += formatName(descriptors.name.value)
-						delete descriptors.name
+						const nameDescriptor = Reflect.getOwnPropertyDescriptor(value, `name`)
+
+						if (functionNameDescriptorIsProper(value, nameDescriptor)) {
+							o += formatName(nameDescriptor.value)
+							keys.delete(`name`)
+						}
 					}
 
-					if (typeof descriptors.length?.value == `number` && !descriptors.length.writable && !descriptors.length.enumerable && descriptors.length.configurable) {
-						o += `(${descriptors.length.value}) `
-						delete descriptors.length
+					const lengthDescriptor = Reflect.getOwnPropertyDescriptor(value, `length`)
+
+					if (functionLengthDescriptorIsProper(value, lengthDescriptor)) {
+						o += `(${lengthDescriptor.value}) `
+						keys.delete(`length`)
 					}
 				}
 
@@ -174,12 +301,12 @@ export function toDebugString(
 				if (regexSource != undefined)
 					o += regexSource
 
-				const mapEntries = tryCatch(() => Map.prototype.entries.call(value).map(([ key, value ], index) => [ index, key, value ]).toArray())
+				const mapEntries = tryCatch(() => Map.prototype.entries.call(value).map(([ key, value ], index): [ number, unknown, unknown ] => [ index, key, value ]).toArray())
 
 				if (mapEntries)
 					o += `Map `
 
-				const stack = tryCatch(() => getErrorStack(value))
+				const stack = getErrorStack(value)
 
 				if (stack != undefined)
 					o += `Error `
@@ -188,6 +315,8 @@ export function toDebugString(
 
 				if (setValues)
 					o += `Set `
+
+				// It is safe to call with `undefined`, it'll just always return `false`.
 
 				const isWeakMap = tryCatch(() => !WeakMap.prototype.has.call(value, undefined as any), () => false)
 
@@ -199,7 +328,7 @@ export function toDebugString(
 				if (isWeakSet)
 					o += `WeakSet `
 
-				const arrayBufferByteLength = tryCatch(() => getArrayBufferByteLength(value))
+				const arrayBufferByteLength = getArrayBufferByteLength(value)
 
 				if (arrayBufferByteLength != undefined)
 					o += `ArrayBuffer `
@@ -214,11 +343,8 @@ export function toDebugString(
 				o += isArray ? `[` : `{`
 				indentLevel++
 
-				const keys = [ ...Object.getOwnPropertyNames(descriptors), ...Object.getOwnPropertySymbols(descriptors) ]
-
 				for (const key of keys) {
-					const descriptor = descriptors[key]!
-
+					const descriptor = Reflect.getOwnPropertyDescriptor(value, key)!
 					let prefix = `\n${indent()}`
 
 					if (descriptor.configurable == false && !Object.isSealed(value))
@@ -227,7 +353,7 @@ export function toDebugString(
 					if (descriptor.enumerable == false)
 						prefix += `unenumerable `
 
-					if (descriptor.writable == false && !Object.isFrozen(value))
+					if (descriptor.writable == false && !isActuallyFrozen(value))
 						prefix += `readonly `
 
 					let keyString
@@ -238,19 +364,31 @@ export function toDebugString(
 
 						if (symbolKey != undefined)
 							keyString = keyName = `[Symbol.for(${JSON.stringify(symbolKey)})]`
-						else if (names.has(key))
-							keyString = keyName = `[${names.get(key)!}]`
+						else if (friendlyNames.map.has(key))
+							keyString = keyName = `[${friendlyNames.map.get(key)!}]`
 						else {
-							keyString = `[${symbolToDebugString(key, names, `<symbol *${++symbolReferenceCount}>`)} *${symbolReferenceCount}]`
-							keyName = `[<symbol *${symbolReferenceCount}>]`
+							keyString = `[${symbolToDebugString(key, friendlyNames.map, `<symbol *${++friendlyNames.symbolReferenceCount}>`)} *${friendlyNames.symbolReferenceCount}]`
+							keyName = `[<symbol *${friendlyNames.symbolReferenceCount}>]`
 						}
 					} else
 						keyString = keyName = formatName(key)
 
 					if ("value" in descriptor) {
-						o += `${prefix}${keyString}: `
+						o += `${prefix}${keyString}`
 
-						stringify(descriptor.value, `${valueName}${valueName && valueName != `.` && keyName[0] == `[` ? `` : `.`}${keyName}`)
+						let isTerseMethod = false
+
+						if (typeof descriptor.value == `function`) {
+							const nameDescriptor = Reflect.getOwnPropertyDescriptor(descriptor.value, `name`)
+							const lengthDescriptor = Reflect.getOwnPropertyDescriptor(descriptor.value, `length`)
+
+							isTerseMethod = functionNameDescriptorIsProper(descriptor.value, nameDescriptor) && nameDescriptor.value == key && functionLengthDescriptorIsProper(descriptor.value, lengthDescriptor)
+						}
+
+						if (!isTerseMethod)
+							o += `: `
+
+						stringify(descriptor.value, `${valueName}${valueName && valueName != `.` && keyName[0] == `[` ? `` : `.`}${keyName}`, isTerseMethod)
 					} else {
 						if (descriptor.get != undefined) {
 							o += `${prefix}get ${keyString}: `
@@ -338,7 +476,7 @@ export function toDebugString(
 
 				indentLevel--
 
-				if (keys.length || mapEntries?.length || prototype != expectedPrototype || stack != undefined || setValues?.length || arrayBufferByteLength != undefined || typedArrayAttributes)
+				if (keys.size || mapEntries?.length || prototype != expectedPrototype || stack != undefined || setValues?.length || arrayBufferByteLength != undefined || typedArrayAttributes)
 					o += `\n${indent()}`
 
 				o += isArray ? `]` : `}`
@@ -346,38 +484,6 @@ export function toDebugString(
 		} else
 			o += String(value)
 	}
-}
-
-export function getDebugNames(values: Record<string, unknown>, names = new Map<unknown, string>): Map<unknown, string> {
-	const queue: { name: string, value: unknown }[] = Object.entries(values).map(([ name, value ]) => ({ name, value }))
-
-	for (const item of queue) {
-		if (names.has(item.value))
-			continue
-
-		if (typeof item.value == `symbol`)
-			names.set(item.value, item.name)
-		else if (typeof item.value == `function` || (item.value && typeof item.value == `object`)) {
-			names.set(item.value, item.name)
-
-			const descriptorEntries = Object.entries(Object.getOwnPropertyDescriptors(item.value))
-
-			for (const [ name, descriptor ] of descriptorEntries) {
-				if ("value" in descriptor)
-					queue.push({ name: `${item.name}.${formatName(name)}`, value: descriptor.value })
-				else {
-					queue.push(
-						{ name: `${item.name}.<get ${formatName(name)}>`, value: descriptor.get },
-						{ name: `${item.name}.<set ${formatName(name)}>`, value: descriptor.set }
-					)
-				}
-			}
-
-			queue.push({ name: `${item.name}.<prototype>`, value: Object.getPrototypeOf(item.value) })
-		}
-	}
-
-	return names
 }
 
 if (import.meta.vitest) {
@@ -563,7 +669,7 @@ if (import.meta.vitest) {
 
 		expect(toDebugString({ generatorFunction, generatorObject: generatorFunction() })).toMatchInlineSnapshot(`
 			"{
-				generatorFunction: function generatorFunction(0) {
+				generatorFunction(0) {
 					unconfigurable unenumerable prototype: {
 						<prototype>: <GeneratorPrototype>
 					}
@@ -734,6 +840,68 @@ if (import.meta.vitest) {
 			"function {
 				unenumerable get length: function get(0) {}
 				unenumerable get name: function get(0) {}
+			}"
+		`)
+	})
+
+	test(`sealed function`, () => {
+		expect(toDebugString(Object.seal(function foo() {}))).toMatchInlineSnapshot(`
+			"sealed function foo(0) {
+				unenumerable prototype: {
+					unenumerable constructor: .
+				}
+			}"
+		`)
+	})
+
+	test(`frozen function`, () => {
+		expect(toDebugString(Object.freeze(function foo() {}))).toMatchInlineSnapshot(`
+			"frozen function foo(0) {
+				unenumerable prototype: {
+					unenumerable constructor: .
+				}
+			}"
+		`)
+	})
+
+	test(`referencing builtin symbol key getter`, () => {
+		expect(toDebugString(Reflect.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag))).toMatchInlineSnapshot(`
+			"{
+				get: <TypedArray>.prototype.<get [Symbol.toStringTag]>
+				set: undefined
+				enumerable: false
+				configurable: true
+			}"
+		`)
+	})
+
+	test(`no clashing symbol numbers`, () => {
+		const s = Symbol(`foo`)
+
+		expect(toDebugString(
+			{
+				[Symbol("bar")]: s
+			},
+			{
+				friendlyNames: mapFriendlyNames({
+					foo: Object.assign(Object.create(null), ({
+						[s]: 1
+					}))
+				})
+			}
+		)).toMatchInlineSnapshot(`
+			"{
+				[Symbol("bar") *2]: Symbol("foo") *1
+			}"
+		`)
+	})
+
+	test(`terse method`, () => {
+		expect(toDebugString({
+			foo() {}
+		})).toMatchInlineSnapshot(`
+			"{
+				foo(0) {}
 			}"
 		`)
 	})

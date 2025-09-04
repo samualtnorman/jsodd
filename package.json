@@ -9,8 +9,13 @@
 	"author": "Samual Norman",
 	"license": "MIT",
 	"type": "module",
+	"dependencies": {
+		"@samual/types": "jsr:0.0.2-23ffc7f"
+	},
 	"devDependencies": {
-		"tsdown": "^0.14.2",
+		"@samual/rolldown-config": "jsr:0.0.1-eb70092",
+		"@total-typescript/ts-reset": "^0.6.1",
+		"babel-plugin-here": "^1.0.2",
 		"typescript": "^5.9.2",
 		"vitest": "^3.2.4"
 	}

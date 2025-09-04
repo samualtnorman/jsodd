@@ -1,0 +1,8 @@
+{
+	"extends": "..",
+	"compilerOptions": {
+		"outDir": "../dist",
+		"types": [ "vitest/importMeta", "@total-typescript/ts-reset", "babel-plugin-here/env" ],
+		"emitDeclarationOnly": true
+	}
+}

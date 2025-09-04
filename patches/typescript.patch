@@ -1,0 +1,122 @@
+diff --git a/lib/lib.es2015.reflect.d.ts b/lib/lib.es2015.reflect.d.ts
+index 3ee27b5250b6ad73b6bf62adead9fd8e4ea3186d..d8ecb4ca9cabe4066dc2b8468c4986771e96cf96 100644
+--- a/lib/lib.es2015.reflect.d.ts
++++ b/lib/lib.es2015.reflect.d.ts
+@@ -84,7 +84,7 @@ declare namespace Reflect {
+     function getOwnPropertyDescriptor<T extends object, P extends PropertyKey>(
+         target: T,
+         propertyKey: P,
+-    ): TypedPropertyDescriptor<P extends keyof T ? T[P] : any> | undefined;
++    ): LoosePropertyDescriptor | undefined;
+ 
+     /**
+      * Returns the prototype of an object.
+diff --git a/lib/lib.es2017.object.d.ts b/lib/lib.es2017.object.d.ts
+index 523b05dc8b9573752ea2b305481b13db716e4e92..733bf7e624841e954a99520a12f8566a4d5a0db0 100644
+--- a/lib/lib.es2017.object.d.ts
++++ b/lib/lib.es2017.object.d.ts
+@@ -45,5 +45,5 @@ interface ObjectConstructor {
+      * Returns an object containing all own property descriptors of an object
+      * @param o Object that contains the properties and methods. This can be an object that you created or an existing Document Object Model (DOM) object.
+      */
+-    getOwnPropertyDescriptors<T>(o: T): { [P in keyof T]: TypedPropertyDescriptor<T[P]>; } & { [x: string]: PropertyDescriptor; };
++    getOwnPropertyDescriptors<T>(o: T): LoosePropertyDescriptorMap;
+ }
+diff --git a/lib/lib.es5.d.ts b/lib/lib.es5.d.ts
+index 5452bfe2e401f0397e18f9a373736a6117419506..bf791fb50ff205fbb42afdc62e933009f2f3410c 100644
+--- a/lib/lib.es5.d.ts
++++ b/lib/lib.es5.d.ts
+@@ -107,19 +107,54 @@ interface Symbol {
+ 
+ declare type PropertyKey = string | number | symbol;
+ 
+-interface PropertyDescriptor {
++declare type PropertyDescriptor<T = unknown> = {
+     configurable?: boolean;
+     enumerable?: boolean;
+-    value?: any;
++    value: T;
+     writable?: boolean;
+-    get?(): any;
+-    set?(v: any): void;
+-}
++} | {
++    configurable?: boolean;
++    enumerable?: boolean;
++    writable?: boolean;
++    get(): T;
++    set?(v: T): void;
++} | {
++    configurable?: boolean;
++    enumerable?: boolean;
++    writable?: boolean;
++    get?(): T;
++    set(v: T): void;
++};
++
++declare type LoosePropertyDescriptor<T = unknown> = {
++    configurable?: boolean;
++    enumerable?: boolean;
++    value: T;
++    writable?: boolean;
++    get?: undefined
++    set?: undefined
++} | {
++    configurable?: boolean;
++    enumerable?: boolean;
++    value?: undefined
++    writable?: boolean;
++    get(): T;
++    set?(v: T): void;
++} | {
++    configurable?: boolean;
++    enumerable?: boolean;
++    value?: undefined
++    writable?: boolean;
++    get?(): T;
++    set(v: T): void;
++};
+ 
+ interface PropertyDescriptorMap {
+     [key: PropertyKey]: PropertyDescriptor;
+ }
+ 
++declare type LoosePropertyDescriptorMap = { [key: PropertyKey]: LoosePropertyDescriptor; };
++
+ interface Object {
+     /** The initial value of Object.prototype.constructor is the standard built-in Object constructor. */
+     constructor: Function;
+@@ -164,7 +199,7 @@ interface ObjectConstructor {
+      * Returns the prototype of an object.
+      * @param o The object that references the prototype.
+      */
+-    getPrototypeOf(o: any): any;
++    getPrototypeOf(o: any): object | null;
+ 
+     /**
+      * Gets the own property descriptor of the specified object.
+@@ -172,7 +207,7 @@ interface ObjectConstructor {
+      * @param o Object that contains the property.
+      * @param p Name of the property.
+      */
+-    getOwnPropertyDescriptor(o: any, p: PropertyKey): PropertyDescriptor | undefined;
++    getOwnPropertyDescriptor(o: any, p: PropertyKey): LoosePropertyDescriptor<unknown> | undefined;
+ 
+     /**
+      * Returns the names of the own properties of an object. The own properties of an object are those that are defined directly
+@@ -1523,14 +1558,7 @@ interface ArrayConstructor {
+ 
+ declare var Array: ArrayConstructor;
+ 
+-interface TypedPropertyDescriptor<T> {
+-    enumerable?: boolean;
+-    configurable?: boolean;
+-    writable?: boolean;
+-    value?: T;
+-    get?: () => T;
+-    set?: (value: T) => void;
+-}
++declare type TypedPropertyDescriptor<T> = PropertyDescriptor<T>;
+ 
+ declare type PromiseConstructorLike = new <T>(executor: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) => PromiseLike<T>;
+ 

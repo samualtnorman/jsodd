@@ -1,0 +1,2 @@
+patchedDependencies:
+  typescript: patches/typescript.patch
