@@ -353,10 +353,40 @@ export const toDebugString = (value: unknown, {
 				if (typedArrayAttributes)
 					o += `${typedArrayAttributes.tag} `
 
+				const booleanObjectValue = tryCatch(() => Boolean.prototype.valueOf.call(value))
+
+				if (booleanObjectValue != undefined)
+					o += `Boolean `
+
+				const numberObjectValue = tryCatch(() => Number.prototype.valueOf.call(value))
+
+				if (numberObjectValue != undefined)
+					o += `Number `
+
+				const stringObjectValue = tryCatch(() => String.prototype.valueOf.call(value))
+
+				if (stringObjectValue != undefined) {
+					o += `String `
+
+					keys.delete(`length`)
+
+					for (let index = stringObjectValue.length; index--;)
+						keys.delete(String(index))
+				}
+
 				const isArray = Array.isArray(value) || typedArrayAttributes
 
 				o += isArray ? `[` : `{`
 				indentLevel++
+
+				if (booleanObjectValue != undefined)
+					o += `\n${indent()}<primitive>: ${booleanObjectValue}`
+
+				if (stringObjectValue != undefined)
+					o += `\n${indent()}<primitive>: ${JSON.stringify(stringObjectValue)}`
+
+				if (numberObjectValue != undefined)
+					o += `\n${indent()}<primitive>: ${JSON.stringify(numberObjectValue)}`
 
 				for (const key of keys) {
 					const descriptor = Reflect.getOwnPropertyDescriptor(value, key)!
@@ -489,6 +519,12 @@ export const toDebugString = (value: unknown, {
 							Float32Array: Float32Array.prototype,
 							Float64Array: Float64Array.prototype,
 						}[typedArrayAttributes.tag]
+					: booleanObjectValue != undefined ?
+						Boolean.prototype
+					: numberObjectValue != undefined ?
+						Number.prototype
+					: stringObjectValue != undefined ?
+						String.prototype
 					: Object.prototype
 
 				if (prototype != expectedPrototype) {
@@ -498,7 +534,7 @@ export const toDebugString = (value: unknown, {
 
 				indentLevel--
 
-				if (keys.size || mapEntries?.length || prototype != expectedPrototype || stack != undefined || setValues?.length || arrayBufferByteLength != undefined || typedArrayAttributes)
+				if (keys.size || mapEntries?.length || prototype != expectedPrototype || stack != undefined || setValues?.length || arrayBufferByteLength != undefined || typedArrayAttributes || booleanObjectValue != undefined || numberObjectValue != undefined || stringObjectValue != undefined)
 					o += `\n${indent()}`
 
 				o += isArray ? `]` : `}`
@@ -936,6 +972,54 @@ if (import.meta.vitest) {
 		})).toMatchInlineSnapshot(`
 			"{
 				get foo(0) {}
+			}"
+		`)
+	})
+
+	test(`boolean objects`, () => {
+		expect(toDebugString(new Boolean(false))).toMatchInlineSnapshot(`
+			"Boolean {
+				<primitive>: false
+			}"
+		`)
+
+		expect(toDebugString(new Boolean(true))).toMatchInlineSnapshot(`
+			"Boolean {
+				<primitive>: true
+			}"
+		`)
+	})
+
+	test(`extended boolean object`, () => {
+		expect(toDebugString(Object.assign(new Boolean(true), { foo: `bar` }))).toMatchInlineSnapshot(`
+			"Boolean {
+				<primitive>: true
+				foo: "bar"
+			}"
+		`)
+	})
+
+	test(`number object`, () => {
+		expect(toDebugString(new Number(123))).toMatchInlineSnapshot(`
+			"Number {
+				<primitive>: 123
+			}"
+		`)
+	})
+
+	test(`string object`, () => {
+		expect(toDebugString(new String(`foo`))).toMatchInlineSnapshot(`
+			"String {
+				<primitive>: "foo"
+			}"
+		`)
+	})
+
+	test(`extended string object`, () => {
+		expect(toDebugString(Object.defineProperty(new String(`fo`), `2`, { value: `o`, enumerable: true }))).toMatchInlineSnapshot(`
+			"String {
+				<primitive>: "fo"
+				unconfigurable readonly 2: "o"
 			}"
 		`)
 	})
