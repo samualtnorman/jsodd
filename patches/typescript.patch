@@ -1,18 +1,51 @@
+diff --git a/lib/lib.decorators.legacy.d.ts b/lib/lib.decorators.legacy.d.ts
+index 26fbcb526ab2e7bc103a7dd6e10ed3307655cba8..66a5350359d6ac56b88d0ecf435303010cfeb3fd 100644
+--- a/lib/lib.decorators.legacy.d.ts
++++ b/lib/lib.decorators.legacy.d.ts
+@@ -18,5 +18,5 @@ and limitations under the License.
+ 
+ declare type ClassDecorator = <TFunction extends Function>(target: TFunction) => TFunction | void;
+ declare type PropertyDecorator = (target: Object, propertyKey: string | symbol) => void;
+-declare type MethodDecorator = <T>(target: Object, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<T>) => TypedPropertyDescriptor<T> | void;
++declare type MethodDecorator = <T>(target: Object, propertyKey: string | symbol, descriptor: PropertyDescriptorDefinition<T>) => PropertyDescriptor<T> | void;
+ declare type ParameterDecorator = (target: Object, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+diff --git a/lib/lib.es2015.proxy.d.ts b/lib/lib.es2015.proxy.d.ts
+index 22a0c174600b0376d9a7a2b010ce5652192e2114..0f3d39a995f3e89c22e3ef76d4b5ed7725c46ed3 100644
+--- a/lib/lib.es2015.proxy.d.ts
++++ b/lib/lib.es2015.proxy.d.ts
+@@ -35,7 +35,7 @@ interface ProxyHandler<T extends object> {
+      * @param target The original object which is being proxied.
+      * @returns A `Boolean` indicating whether or not the property has been defined.
+      */
+-    defineProperty?(target: T, property: string | symbol, attributes: PropertyDescriptor): boolean;
++    defineProperty?(target: T, property: string | symbol, attributes: PropertyDescriptorDefinition): boolean;
+ 
+     /**
+      * A trap for the `delete` operator.
 diff --git a/lib/lib.es2015.reflect.d.ts b/lib/lib.es2015.reflect.d.ts
-index 3ee27b5250b6ad73b6bf62adead9fd8e4ea3186d..d8ecb4ca9cabe4066dc2b8468c4986771e96cf96 100644
+index 3ee27b5250b6ad73b6bf62adead9fd8e4ea3186d..06a37fc7801c32513a6ac422e3d14927ed882f73 100644
 --- a/lib/lib.es2015.reflect.d.ts
 +++ b/lib/lib.es2015.reflect.d.ts
+@@ -52,7 +52,7 @@ declare namespace Reflect {
+      * @param propertyKey The property name.
+      * @param attributes Descriptor for the property. It can be for a data property or an accessor property.
+      */
+-    function defineProperty(target: object, propertyKey: PropertyKey, attributes: PropertyDescriptor & ThisType<any>): boolean;
++    function defineProperty(target: object, propertyKey: PropertyKey, attributes: PropertyDescriptorDefinition & ThisType<object>): boolean;
+ 
+     /**
+      * Removes a property from an object, equivalent to `delete target[propertyKey]`,
 @@ -84,7 +84,7 @@ declare namespace Reflect {
      function getOwnPropertyDescriptor<T extends object, P extends PropertyKey>(
          target: T,
          propertyKey: P,
 -    ): TypedPropertyDescriptor<P extends keyof T ? T[P] : any> | undefined;
-+    ): LoosePropertyDescriptor | undefined;
++    ): PropertyDescriptor | undefined;
  
      /**
       * Returns the prototype of an object.
 diff --git a/lib/lib.es2017.object.d.ts b/lib/lib.es2017.object.d.ts
-index 523b05dc8b9573752ea2b305481b13db716e4e92..733bf7e624841e954a99520a12f8566a4d5a0db0 100644
+index 523b05dc8b9573752ea2b305481b13db716e4e92..21cfb4a917b0c1addfbe4a3450e3152b36bf555d 100644
 --- a/lib/lib.es2017.object.d.ts
 +++ b/lib/lib.es2017.object.d.ts
 @@ -45,5 +45,5 @@ interface ObjectConstructor {
@@ -20,73 +53,67 @@ index 523b05dc8b9573752ea2b305481b13db716e4e92..733bf7e624841e954a99520a12f8566a
       * @param o Object that contains the properties and methods. This can be an object that you created or an existing Document Object Model (DOM) object.
       */
 -    getOwnPropertyDescriptors<T>(o: T): { [P in keyof T]: TypedPropertyDescriptor<T[P]>; } & { [x: string]: PropertyDescriptor; };
-+    getOwnPropertyDescriptors<T>(o: T): LoosePropertyDescriptorMap;
++    getOwnPropertyDescriptors<T>(o: T): PropertyDescriptorMap;
  }
 diff --git a/lib/lib.es5.d.ts b/lib/lib.es5.d.ts
-index 5452bfe2e401f0397e18f9a373736a6117419506..bf791fb50ff205fbb42afdc62e933009f2f3410c 100644
+index 5452bfe2e401f0397e18f9a373736a6117419506..2d019ef3c424ea4507d3e788c7bba0852640ad29 100644
 --- a/lib/lib.es5.d.ts
 +++ b/lib/lib.es5.d.ts
-@@ -107,19 +107,54 @@ interface Symbol {
+@@ -107,19 +107,49 @@ interface Symbol {
  
  declare type PropertyKey = string | number | symbol;
  
 -interface PropertyDescriptor {
-+declare type PropertyDescriptor<T = unknown> = {
++type PropertyDescriptor<T = unknown> = {
++    configurable: boolean;
++    enumerable: boolean;
++    value?: T;
++    writable?: boolean;
++    get?: undefined;
++    set?: undefined;
++} | {
++    configurable: boolean;
++    enumerable: boolean;
++    value?: undefined;
++    writable?: undefined;
++    get(): T;
++    set?(v: T): void;
++} | {
++    configurable: boolean;
++    enumerable: boolean;
++    value?: undefined;
++    writable?: undefined;
++    get?(): T;
++    set(v: T): void;
++}
++
++type PropertyDescriptorDefinition<T = unknown> = {
      configurable?: boolean;
      enumerable?: boolean;
 -    value?: any;
-+    value: T;
++    value?: T;
      writable?: boolean;
 -    get?(): any;
 -    set?(v: any): void;
--}
 +} | {
 +    configurable?: boolean;
 +    enumerable?: boolean;
-+    writable?: boolean;
-+    get(): T;
-+    set?(v: T): void;
-+} | {
-+    configurable?: boolean;
-+    enumerable?: boolean;
-+    writable?: boolean;
 +    get?(): T;
-+    set(v: T): void;
-+};
-+
-+declare type LoosePropertyDescriptor<T = unknown> = {
-+    configurable?: boolean;
-+    enumerable?: boolean;
-+    value: T;
-+    writable?: boolean;
-+    get?: undefined
-+    set?: undefined
-+} | {
-+    configurable?: boolean;
-+    enumerable?: boolean;
-+    value?: undefined
-+    writable?: boolean;
-+    get(): T;
 +    set?(v: T): void;
-+} | {
-+    configurable?: boolean;
-+    enumerable?: boolean;
-+    value?: undefined
-+    writable?: boolean;
-+    get?(): T;
-+    set(v: T): void;
-+};
+ }
  
  interface PropertyDescriptorMap {
      [key: PropertyKey]: PropertyDescriptor;
  }
  
-+declare type LoosePropertyDescriptorMap = { [key: PropertyKey]: LoosePropertyDescriptor; };
++interface PropertyDescriptorDefinitionMap {
++    [key: PropertyKey]: PropertyDescriptorDefinition;
++}
 +
  interface Object {
      /** The initial value of Object.prototype.constructor is the standard built-in Object constructor. */
      constructor: Function;
-@@ -164,7 +199,7 @@ interface ObjectConstructor {
+@@ -164,7 +194,7 @@ interface ObjectConstructor {
       * Returns the prototype of an object.
       * @param o The object that references the prototype.
       */
@@ -95,16 +122,33 @@ index 5452bfe2e401f0397e18f9a373736a6117419506..bf791fb50ff205fbb42afdc62e933009
  
      /**
       * Gets the own property descriptor of the specified object.
-@@ -172,7 +207,7 @@ interface ObjectConstructor {
-      * @param o Object that contains the property.
-      * @param p Name of the property.
+@@ -192,7 +222,7 @@ interface ObjectConstructor {
+      * @param o Object to use as a prototype. May be null
+      * @param properties JavaScript object that contains one or more property descriptors.
       */
--    getOwnPropertyDescriptor(o: any, p: PropertyKey): PropertyDescriptor | undefined;
-+    getOwnPropertyDescriptor(o: any, p: PropertyKey): LoosePropertyDescriptor<unknown> | undefined;
+-    create(o: object | null, properties: PropertyDescriptorMap & ThisType<any>): any;
++    create(o: object | null, properties: PropertyDescriptorDefinitionMap & ThisType<object>): object;
  
      /**
-      * Returns the names of the own properties of an object. The own properties of an object are those that are defined directly
-@@ -1523,14 +1558,7 @@ interface ArrayConstructor {
+      * Adds a property to an object, or modifies attributes of an existing property.
+@@ -200,14 +230,14 @@ interface ObjectConstructor {
+      * @param p The property name.
+      * @param attributes Descriptor for the property. It can be for a data property or an accessor property.
+      */
+-    defineProperty<T>(o: T, p: PropertyKey, attributes: PropertyDescriptor & ThisType<any>): T;
++    defineProperty<T>(o: T, p: PropertyKey, attributes: PropertyDescriptorDefinition & ThisType<object>): T;
+ 
+     /**
+      * Adds one or more properties to an object, and/or modifies attributes of existing properties.
+      * @param o Object on which to add or modify the properties. This can be a native JavaScript object or a DOM object.
+      * @param properties JavaScript object that contains one or more descriptor objects. Each descriptor object describes a data property or an accessor property.
+      */
+-    defineProperties<T>(o: T, properties: PropertyDescriptorMap & ThisType<any>): T;
++    defineProperties<T>(o: T, properties: PropertyDescriptorDefinitionMap & ThisType<object>): T;
+ 
+     /**
+      * Prevents the modification of attributes of existing properties, and prevents the addition of new properties.
+@@ -1523,15 +1553,6 @@ interface ArrayConstructor {
  
  declare var Array: ArrayConstructor;
  
@@ -116,7 +160,7 @@ index 5452bfe2e401f0397e18f9a373736a6117419506..bf791fb50ff205fbb42afdc62e933009
 -    get?: () => T;
 -    set?: (value: T) => void;
 -}
-+declare type TypedPropertyDescriptor<T> = PropertyDescriptor<T>;
- 
+-
  declare type PromiseConstructorLike = new <T>(executor: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) => PromiseLike<T>;
  
+ interface PromiseLike<T> {

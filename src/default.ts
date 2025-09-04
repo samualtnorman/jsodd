@@ -165,13 +165,13 @@ export const mapFriendlyNames = (values: Record<string, object | symbol>): Frien
 	return { map: names, symbolReferenceCount }
 }
 
-const functionNameOrLengthDescriptorIsProper = (function_: object, descriptor: LoosePropertyDescriptor) =>
+const functionNameOrLengthDescriptorIsProper = (function_: object, descriptor: PropertyDescriptor) =>
 	!descriptor.enumerable && !descriptor.writable && descriptor.configurable != Object.isSealed(function_)
 
-const functionNameDescriptorIsProper = (function_: object, descriptor?: LoosePropertyDescriptor): descriptor is { value: string } =>
+const functionNameDescriptorIsProper = (function_: object, descriptor?: PropertyDescriptor): descriptor is { configurable: boolean, enumerable: false, value: string } =>
 	typeof descriptor?.value == `string` && functionNameOrLengthDescriptorIsProper(function_, descriptor)
 
-const functionLengthDescriptorIsProper = (function_: object, descriptor?: LoosePropertyDescriptor): descriptor is { value: number } =>
+const functionLengthDescriptorIsProper = (function_: object, descriptor?: PropertyDescriptor): descriptor is { configurable: boolean, enumerable: false, value: number } =>
 	typeof descriptor?.value == `number` && functionNameOrLengthDescriptorIsProper(function_, descriptor)
 
 const builtinFriendlyNames = mapFriendlyNames({
@@ -392,10 +392,10 @@ export const toDebugString = (value: unknown, {
 					const descriptor = Reflect.getOwnPropertyDescriptor(value, key)!
 					let prefix = `\n${indent()}`
 
-					if (descriptor.configurable == false && !Object.isSealed(value))
+					if (!descriptor.configurable && !Object.isSealed(value))
 						prefix += `unconfigurable `
 
-					if (descriptor.enumerable == false)
+					if (!descriptor.enumerable)
 						prefix += `unenumerable `
 
 					if (descriptor.writable == false && !isActuallyFrozen(value))
