@@ -1,5 +1,23 @@
 import type { LaxPartial } from "@samual/types"
 
+const WellKnownSymbols = new Map([
+	[ Symbol.isConcatSpreadable, `Symbol.isConcatSpreadable` ],
+	[ Symbol.iterator, `Symbol.iterator` ],
+	[ Symbol.match, `Symbol.match` ],
+	[ Symbol.replace, `Symbol.replace` ],
+	[ Symbol.search, `Symbol.search` ],
+	[ Symbol.species, `Symbol.species` ],
+	[ Symbol.hasInstance, `Symbol.hasInstance` ],
+	[ Symbol.split, `Symbol.split` ],
+	[ Symbol.toPrimitive, `Symbol.toPrimitive` ],
+	[ Symbol.toStringTag, `Symbol.toStringTag` ],
+	[ Symbol.unscopables, `Symbol.unscopables` ],
+	[ Symbol.asyncIterator, `Symbol.asyncIterator` ],
+	[ Symbol.matchAll, `Symbol.matchAll` ],
+	[ Symbol.dispose, `Symbol.dispose` ],
+	[ Symbol.asyncDispose, `Symbol.asyncDispose` ]
+])
+
 const tryCatch: {
 	<T>(executor: () => T): T | undefined
 	<TExecutorReturn, TOnErrorReturn>(
@@ -94,11 +112,8 @@ export const mapFriendlyNames = (values: Record<string, object | symbol>): Frien
 		return `[${name}]`
 	}
 
-	const queue: { name: string, value: object }[] = Object.entries(values).map(([ name, value ]) => {
-		names.set(value, name)
-
-		return ({ name, value })
-	}).filter(Boolean)
+	const queue: { name: string, value: object }[] =
+		Object.entries(values).map(([ name, value ]) => (names.set(value, name), { name, value })).filter(Boolean)
 
 	while (queue.length) {
 		const item = queue.shift()!
@@ -373,31 +388,38 @@ export const toDebugString = (value: unknown, {
 					} else
 						keyString = keyName = formatName(key)
 
-					if ("value" in descriptor) {
-						o += `${prefix}${keyString}`
+					const getExpectedFunctionName = (key: string | symbol): string => {
+						return typeof key == `string` ? key : `[${WellKnownSymbols.get(key) || key.description}]`
+					}
 
+					const stringifyKeyAndValue = (value: unknown, expectedFunctionName: string, name: string) => {
 						let isTerseMethod = false
 
-						if (typeof descriptor.value == `function`) {
-							const nameDescriptor = Reflect.getOwnPropertyDescriptor(descriptor.value, `name`)
-							const lengthDescriptor = Reflect.getOwnPropertyDescriptor(descriptor.value, `length`)
+						if (typeof value == `function`) {
+							const nameDescriptor = Reflect.getOwnPropertyDescriptor(value, `name`)
+							const lengthDescriptor = Reflect.getOwnPropertyDescriptor(value, `length`)
 
-							isTerseMethod = functionNameDescriptorIsProper(descriptor.value, nameDescriptor) && nameDescriptor.value == key && functionLengthDescriptorIsProper(descriptor.value, lengthDescriptor)
+							isTerseMethod = functionNameDescriptorIsProper(value, nameDescriptor) && nameDescriptor.value == expectedFunctionName && functionLengthDescriptorIsProper(value, lengthDescriptor)
 						}
 
 						if (!isTerseMethod)
 							o += `: `
 
-						stringify(descriptor.value, `${valueName}${valueName && valueName != `.` && keyName[0] == `[` ? `` : `.`}${keyName}`, isTerseMethod)
+						stringify(value, name, isTerseMethod)
+					}
+
+					if ("value" in descriptor) {
+						o += `${prefix}${keyString}`
+						stringifyKeyAndValue(descriptor.value, getExpectedFunctionName(key), `${valueName}${valueName && valueName != `.` && keyName[0] == `[` ? `` : `.`}${keyName}`)
 					} else {
-						if (descriptor.get != undefined) {
-							o += `${prefix}get ${keyString}: `
-							stringify(descriptor.get, `${valueName}.<get ${keyName}>`)
+						if (descriptor.get) {
+							o += `${prefix}get ${keyString}`
+							stringifyKeyAndValue(descriptor.get, `get ${getExpectedFunctionName(key)}`, `${valueName}.<get ${keyName}>`)
 						}
 
-						if (descriptor.set != undefined) {
-							o += `${prefix}set ${keyString}: `
-							stringify(descriptor.set, `${valueName}.<set ${keyName}>`)
+						if (descriptor.set) {
+							o += `${prefix}set ${keyString}`
+							stringifyKeyAndValue(descriptor.set, `set ${getExpectedFunctionName(key)}`, `${valueName}.<set ${keyName}>`)
 						}
 					}
 				}
@@ -585,7 +607,7 @@ if (import.meta.vitest) {
 			}
 		})).toMatchInlineSnapshot(`
 			"{
-				get [Symbol.toStringTag]: function "get [Symbol.toStringTag]"(0) {}
+				get [Symbol.toStringTag](0) {}
 			}"
 		`)
 	})
@@ -902,6 +924,18 @@ if (import.meta.vitest) {
 		})).toMatchInlineSnapshot(`
 			"{
 				foo(0) {}
+			}"
+		`)
+	})
+
+	test(`terse getter`, () => {
+		expect(toDebugString({
+			get foo() {
+				return 1
+			}
+		})).toMatchInlineSnapshot(`
+			"{
+				get foo(0) {}
 			}"
 		`)
 	})
