@@ -42,34 +42,46 @@ const isActuallyFrozen = (target: object) => !Reflect.isExtensible(target) && Re
 	return !(configurable || writable)
 })
 
-const TypedArray = Object.getPrototypeOf(Uint8Array) as { prototype: {} }
+const TypedArray = Reflect.getPrototypeOf(Uint8Array) as {
+	prototype: { buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, [Symbol.toStringTag]: string }
+}
+
 const GeneratorFunction = (function* () {}).constructor
 const GeneratorPrototype = GeneratorFunction.prototype.prototype
 const AsyncFunction = (async () => {}).constructor
-const AsyncGenerator = Object.getPrototypeOf((async function* () {}).prototype)!.constructor
+const AsyncGenerator = Reflect.getPrototypeOf((async function* () {}).prototype)!.constructor
 
-const regExpSourceGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, "source")!.get!
-const regExpFlagsGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, "flags")!.get!
+const regExpSourceGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, `source`).get!
+const regExpFlagsGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, `flags`).get!
 const errorStackGetter = Reflect.getOwnPropertyDescriptor(Error(), `stack`)?.get || Reflect.getOwnPropertyDescriptor(Error.prototype, `stack`)?.get
-const arrayBufferByteLengthGetter = Reflect.getOwnPropertyDescriptor(ArrayBuffer.prototype, `byteLength`)!.get!
+const arrayBufferByteLengthGetter = Reflect.getOwnPropertyDescriptor(ArrayBuffer.prototype, `byteLength`).get!
+const sharedArrayBufferByteLengthGetter = Reflect.getOwnPropertyDescriptor(SharedArrayBuffer.prototype, `byteLength`).get!
+const dataViewBufferGetter = Reflect.getOwnPropertyDescriptor(DataView.prototype, `buffer`).get!
+const dataViewByteLengthGetter = Reflect.getOwnPropertyDescriptor(DataView.prototype, `byteLength`).get!
+const dataViewByteOffsetGetter = Reflect.getOwnPropertyDescriptor(DataView.prototype, `byteOffset`).get!
 
-Function.prototype.call.bind(regExpSourceGetter)
+const getRegexSource = (regex: unknown): string | undefined => tryCatch(() => `/${regExpSourceGetter.call(regex)}/${regExpFlagsGetter.call(regex)}`)
+const getErrorStack = (error: unknown): string | undefined => tryCatch(() => errorStackGetter?.call(error))
+const getArrayBufferByteLength = (value: unknown): number | undefined => tryCatch(() => arrayBufferByteLengthGetter.call(value))
+const getSharedArrayBufferByteLength = (value: unknown) => tryCatch(() => sharedArrayBufferByteLengthGetter.call(value) as number)
 
-const getRegExpSource = (regex: unknown) => regExpSourceGetter.call(regex) as string
-const getRegExpFlags = (regex: unknown) => regExpFlagsGetter.call(regex) as string
-const getErrorStack = (error: unknown) => tryCatch(() => errorStackGetter?.call(error) as string | undefined)
-const getArrayBufferByteLength = (value: unknown) => tryCatch(() => arrayBufferByteLengthGetter.call(value) as number)
+const getTypedArrayAttributes = (value: unknown):
+	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, tag: string } | undefined =>
+	tryCatch(() => ({
+		buffer: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, `buffer`).get!.call(value),
+		byteLength: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteLength").get!.call(value),
+		byteOffset: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteOffset").get!.call(value),
+		length: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "length").get!.call(value),
+		tag: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag).get!.call(value)
+	}))
 
-type AnyTypedArray = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | BigInt64Array |
-	BigUint64Array | Float16Array | Float32Array | Float64Array
-
-const getTypedArrayAttributes = (value: unknown) => tryCatch(() => ({
-	buffer: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, `buffer`)!.get!.call(value) as AnyTypedArray["buffer"],
-	byteLength: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteLength")!.get!.call(value) as AnyTypedArray["byteLength"],
-	byteOffset: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteOffset")!.get!.call(value) as AnyTypedArray["byteOffset"],
-	length: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "length")!.get!.call(value) as AnyTypedArray["length"],
-	tag: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag)!.get!.call(value) as AnyTypedArray[typeof Symbol.toStringTag]
-}))
+const getDataViewAttributes = (value: unknown):
+	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number } | undefined =>
+	tryCatch(() => ({
+		buffer: dataViewBufferGetter.call(value),
+		byteLength: dataViewByteLengthGetter.call(value),
+		byteOffset: dataViewByteOffsetGetter.call(value)
+	}))
 
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
 
@@ -154,7 +166,7 @@ export const mapFriendlyNames = (values: Record<string, object | symbol>): Frien
 			}
 		}
 
-		const prototype = Object.getPrototypeOf(item.value)
+		const prototype = Reflect.getPrototypeOf(item.value)
 
 		if (prototype && !names.has(prototype)) {
 			const prototypeName = `${item.name}.<prototype>`
@@ -170,10 +182,12 @@ export const mapFriendlyNames = (values: Record<string, object | symbol>): Frien
 const functionNameOrLengthDescriptorIsProper = (function_: object, descriptor: PropertyDescriptor) =>
 	!descriptor.enumerable && !descriptor.writable && descriptor.configurable != Object.isSealed(function_)
 
-const functionNameDescriptorIsProper = (function_: object, descriptor?: PropertyDescriptor): descriptor is { configurable: boolean, enumerable: false, value: string } =>
+const functionNameDescriptorIsProper = (function_: object, descriptor?: PropertyDescriptor):
+	descriptor is { configurable: boolean, enumerable: false, value: string, writable: false } =>
 	!!(typeof descriptor?.value == `string` && functionNameOrLengthDescriptorIsProper(function_, descriptor))
 
-const functionLengthDescriptorIsProper = (function_: object, descriptor?: PropertyDescriptor): descriptor is { configurable: boolean, enumerable: false, value: number } =>
+const functionLengthDescriptorIsProper = (function_: object, descriptor?: PropertyDescriptor):
+	descriptor is { configurable: boolean, enumerable: false, value: number, writable: false } =>
 	!!(typeof descriptor?.value == `number` && functionNameOrLengthDescriptorIsProper(function_, descriptor))
 
 const builtinFriendlyNames = mapFriendlyNames({
@@ -187,7 +201,7 @@ const builtinFriendlyNames = mapFriendlyNames({
 	EvalError,
 	RangeError,
 	ReferenceError,
-	SuppressedError,
+	...typeof SuppressedError != `undefined` ? { SuppressedError } : undefined,
 	SyntaxError,
 	TypeError,
 	URIError,
@@ -213,7 +227,7 @@ const builtinFriendlyNames = mapFriendlyNames({
 	Uint32Array,
 	BigInt64Array,
 	BigUint64Array,
-	Float16Array,
+	...typeof Float16Array != `undefined` ? { Float16Array } : undefined,
 	Float32Array,
 	Float64Array,
 
@@ -228,6 +242,9 @@ const builtinFriendlyNames = mapFriendlyNames({
 	Atomics,
 	JSON,
 
+	WeakRef,
+	FinalizationRegistry,
+
 	eval,
 	isFinite,
 	isNaN,
@@ -240,10 +257,10 @@ const builtinFriendlyNames = mapFriendlyNames({
 	escape,
 	unescape,
 
-	AsyncDisposableStack,
+	...typeof AsyncDisposableStack != `undefined` ? { AsyncDisposableStack } : undefined,
 	"<AsyncFunction>": AsyncFunction,
 	"<AsyncGenerator>": AsyncGenerator,
-	Iterator,
+	...typeof Iterator != `undefined` ? { Iterator } : undefined,
 	"<GeneratorFunction>": GeneratorFunction,
 	"<GeneratorPrototype>": GeneratorPrototype
 })
@@ -328,10 +345,10 @@ export const toDebugString = (value: unknown, {
 					}
 				}
 
-				const regexSource = tryCatch(() => `/${getRegExpSource(value)}/${getRegExpFlags(value)} `)
+				const regexSource = getRegexSource(value)
 
 				if (regexSource != undefined)
-					o += regexSource
+					o += `${regexSource} `
 
 				const mapEntries = tryCatch(() => Map.prototype.entries.call(value).map(([ key, value ], index): [ number, unknown, unknown ] => [ index, key, value ]).toArray())
 
@@ -365,10 +382,20 @@ export const toDebugString = (value: unknown, {
 				if (arrayBufferByteLength != undefined)
 					o += `ArrayBuffer `
 
+				const sharedArrayBufferByteLength = getSharedArrayBufferByteLength(value)
+
+				if (sharedArrayBufferByteLength != undefined)
+					o += `SharedArrayBuffer `
+
 				const typedArrayAttributes = getTypedArrayAttributes(value)
 
 				if (typedArrayAttributes)
 					o += `${typedArrayAttributes.tag} `
+
+				const dataViewAttributes = getDataViewAttributes(value)
+
+				if (dataViewAttributes)
+					o += `DataView `
 
 				const booleanObjectValue = tryCatch(() => Boolean.prototype.valueOf.call(value))
 
@@ -390,6 +417,11 @@ export const toDebugString = (value: unknown, {
 					for (let index = stringObjectValue.length; index--;)
 						keys.delete(String(index))
 				}
+
+				const isWeakRef = tryCatch(() => !!WeakRef.prototype.deref.call(value), () => false)
+
+				if (isWeakRef)
+					o += `WeakRef `
 
 				const isArray = Array.isArray(value) || typedArrayAttributes
 
@@ -514,13 +546,25 @@ export const toDebugString = (value: unknown, {
 					}>`
 				}
 
+				if (sharedArrayBufferByteLength != undefined) {
+					o += `\n${indent()}<byteLength>: ${sharedArrayBufferByteLength}\n${indent()}<content>: <${
+						[ ...new Uint8Array(value as any) ].map(byte => byte.toString(16).toUpperCase().padStart(2, `0`)).join(` `)
+					}>`
+				}
+
 				if (typedArrayAttributes) {
 					o += `\n${indent()}<buffer>: `
 					stringify(typedArrayAttributes.buffer, `${valueName}.<buffer>`)
 					o += `\n${indent()}<byteLength>: ${typedArrayAttributes.byteLength}\n${indent()}<byteOffset>: ${typedArrayAttributes.byteOffset}\n${indent()}<length>: ${typedArrayAttributes.length}`
 				}
 
-				const prototype = Object.getPrototypeOf(value)
+				if (dataViewAttributes) {
+					o += `\n${indent()}<buffer>: `
+					stringify(dataViewAttributes.buffer, `${valueName}.<buffer>`)
+					o += `\n${indent()}<byteLength>: ${dataViewAttributes.byteLength}\n${indent()}<byteOffset>: ${dataViewAttributes.byteOffset}`
+				}
+
+				const prototype = Reflect.getPrototypeOf(value)
 
 				const expectedPrototype =
 					mapEntries ?
@@ -539,6 +583,8 @@ export const toDebugString = (value: unknown, {
 						WeakSet.prototype
 					: arrayBufferByteLength ?
 						ArrayBuffer.prototype
+					: sharedArrayBufferByteLength ?
+						SharedArrayBuffer.prototype
 					: typedArrayAttributes ?
 						{
 							Int8Array: Int8Array.prototype,
@@ -560,6 +606,10 @@ export const toDebugString = (value: unknown, {
 						Number.prototype
 					: stringObjectValue != undefined ?
 						String.prototype
+					: dataViewAttributes ?
+						DataView.prototype
+					: isWeakRef ?
+						WeakRef.prototype
 					: Object.prototype
 
 				if (prototype != expectedPrototype) {
@@ -569,7 +619,7 @@ export const toDebugString = (value: unknown, {
 
 				indentLevel--
 
-				if (keys.size || mapEntries?.length || prototype != expectedPrototype || stack != undefined || setValues?.length || arrayBufferByteLength != undefined || typedArrayAttributes || booleanObjectValue != undefined || numberObjectValue != undefined || stringObjectValue != undefined)
+				if (keys.size || mapEntries?.length || prototype != expectedPrototype || stack != undefined || setValues?.length || arrayBufferByteLength != undefined || sharedArrayBufferByteLength != undefined || typedArrayAttributes || booleanObjectValue != undefined || numberObjectValue != undefined || stringObjectValue != undefined || dataViewAttributes)
 					o += `\n${indent()}`
 
 				o += isArray ? `]` : `}`
@@ -785,7 +835,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`fake regex`, () => {
-		expect(toDebugString(Object.defineProperties(Object.create(RegExp.prototype), {
+		expect(toDebugString(Object.create(RegExp.prototype, {
 			lastIndex: { value: 0, writable: true }
 		}))).toMatchInlineSnapshot(`
 			"{
@@ -1072,4 +1122,46 @@ if (import.meta.vitest) {
 			}"
 		`)
 	})
+
+	test(`weak set`, () => {
+		expect(toDebugString(new WeakSet([ {}, {}, {} ]))).toMatchInlineSnapshot(`"WeakSet {}"`)
+	})
+
+	test(`weak map`, () => {
+		expect(toDebugString(new WeakMap([ [ {}, 1 ], [ {}, 2 ], [ {}, 3 ] ]))).toMatchInlineSnapshot(`"WeakMap {}"`)
+	})
+
+	test(`shared array buffer`, () => {
+		const bytes = new Uint8Array(new SharedArrayBuffer(3))
+
+		bytes.set([ 1, 2, 3 ])
+
+		expect(toDebugString(bytes.buffer)).toMatchInlineSnapshot(`
+			"SharedArrayBuffer {
+				<byteLength>: 3
+				<content>: <01 02 03>
+			}"
+		`)
+	})
+
+	test(`data view`, () => {
+		expect(toDebugString(new DataView(new Uint8Array([ 1, 2, 3 ]).buffer))).toMatchInlineSnapshot(`
+			"DataView {
+				<buffer>: ArrayBuffer {
+					<byteLength>: 3
+					<content>: <01 02 03>
+				}
+				<byteLength>: 3
+				<byteOffset>: 0
+			}"
+		`)
+	})
+
+	test(`weak ref`, () => {
+		expect(toDebugString(new WeakRef({}))).toMatchInlineSnapshot(`
+			"WeakRef {}"
+		`)
+	})
 }
+
+console.log(toDebugString([].values()))

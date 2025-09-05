@@ -23,7 +23,7 @@ index 22a0c174600b0376d9a7a2b010ce5652192e2114..0f3d39a995f3e89c22e3ef76d4b5ed77
      /**
       * A trap for the `delete` operator.
 diff --git a/lib/lib.es2015.reflect.d.ts b/lib/lib.es2015.reflect.d.ts
-index 3ee27b5250b6ad73b6bf62adead9fd8e4ea3186d..06a37fc7801c32513a6ac422e3d14927ed882f73 100644
+index 3ee27b5250b6ad73b6bf62adead9fd8e4ea3186d..f41c25afc9c7bc104ddd166c940c94e99b7c5a9d 100644
 --- a/lib/lib.es2015.reflect.d.ts
 +++ b/lib/lib.es2015.reflect.d.ts
 @@ -52,7 +52,7 @@ declare namespace Reflect {
@@ -35,12 +35,15 @@ index 3ee27b5250b6ad73b6bf62adead9fd8e4ea3186d..06a37fc7801c32513a6ac422e3d14927
  
      /**
       * Removes a property from an object, equivalent to `delete target[propertyKey]`,
-@@ -84,7 +84,7 @@ declare namespace Reflect {
-     function getOwnPropertyDescriptor<T extends object, P extends PropertyKey>(
-         target: T,
-         propertyKey: P,
+@@ -81,10 +81,7 @@ declare namespace Reflect {
+      * @param target Object that contains the property.
+      * @param propertyKey The property name.
+      */
+-    function getOwnPropertyDescriptor<T extends object, P extends PropertyKey>(
+-        target: T,
+-        propertyKey: P,
 -    ): TypedPropertyDescriptor<P extends keyof T ? T[P] : any> | undefined;
-+    ): PropertyDescriptor | undefined;
++    function getOwnPropertyDescriptor<T extends object, P extends keyof T extends never ? keyof any : keyof T>(target: T, propertyKey: P): PropertyDescriptor<P extends keyof T ? T[P] : unknown>;
  
      /**
       * Returns the prototype of an object.
@@ -56,10 +59,10 @@ index 523b05dc8b9573752ea2b305481b13db716e4e92..21cfb4a917b0c1addfbe4a3450e3152b
 +    getOwnPropertyDescriptors<T>(o: T): PropertyDescriptorMap;
  }
 diff --git a/lib/lib.es5.d.ts b/lib/lib.es5.d.ts
-index 5452bfe2e401f0397e18f9a373736a6117419506..2d019ef3c424ea4507d3e788c7bba0852640ad29 100644
+index 5452bfe2e401f0397e18f9a373736a6117419506..49e40003316182baab9ed04a2e2c904ef4be7daf 100644
 --- a/lib/lib.es5.d.ts
 +++ b/lib/lib.es5.d.ts
-@@ -107,19 +107,49 @@ interface Symbol {
+@@ -107,19 +107,53 @@ interface Symbol {
  
  declare type PropertyKey = string | number | symbol;
  
@@ -67,8 +70,8 @@ index 5452bfe2e401f0397e18f9a373736a6117419506..2d019ef3c424ea4507d3e788c7bba085
 +type PropertyDescriptor<T = unknown> = {
 +    configurable: boolean;
 +    enumerable: boolean;
-+    value?: T;
-+    writable?: boolean;
++    value: T;
++    writable: boolean;
 +    get?: undefined;
 +    set?: undefined;
 +} | {
@@ -95,9 +98,13 @@ index 5452bfe2e401f0397e18f9a373736a6117419506..2d019ef3c424ea4507d3e788c7bba085
      writable?: boolean;
 -    get?(): any;
 -    set?(v: any): void;
++    get?: never
++    set?: never
 +} | {
 +    configurable?: boolean;
 +    enumerable?: boolean;
++    value?: never;
++    writable?: never;
 +    get?(): T;
 +    set?(v: T): void;
  }
@@ -113,7 +120,7 @@ index 5452bfe2e401f0397e18f9a373736a6117419506..2d019ef3c424ea4507d3e788c7bba085
  interface Object {
      /** The initial value of Object.prototype.constructor is the standard built-in Object constructor. */
      constructor: Function;
-@@ -164,7 +194,7 @@ interface ObjectConstructor {
+@@ -164,7 +198,7 @@ interface ObjectConstructor {
       * Returns the prototype of an object.
       * @param o The object that references the prototype.
       */
@@ -122,7 +129,7 @@ index 5452bfe2e401f0397e18f9a373736a6117419506..2d019ef3c424ea4507d3e788c7bba085
  
      /**
       * Gets the own property descriptor of the specified object.
-@@ -192,7 +222,7 @@ interface ObjectConstructor {
+@@ -192,7 +226,7 @@ interface ObjectConstructor {
       * @param o Object to use as a prototype. May be null
       * @param properties JavaScript object that contains one or more property descriptors.
       */
@@ -131,7 +138,7 @@ index 5452bfe2e401f0397e18f9a373736a6117419506..2d019ef3c424ea4507d3e788c7bba085
  
      /**
       * Adds a property to an object, or modifies attributes of an existing property.
-@@ -200,14 +230,14 @@ interface ObjectConstructor {
+@@ -200,14 +234,14 @@ interface ObjectConstructor {
       * @param p The property name.
       * @param attributes Descriptor for the property. It can be for a data property or an accessor property.
       */
@@ -148,7 +155,7 @@ index 5452bfe2e401f0397e18f9a373736a6117419506..2d019ef3c424ea4507d3e788c7bba085
  
      /**
       * Prevents the modification of attributes of existing properties, and prevents the addition of new properties.
-@@ -1523,15 +1553,6 @@ interface ArrayConstructor {
+@@ -1523,15 +1557,6 @@ interface ArrayConstructor {
  
  declare var Array: ArrayConstructor;
  
