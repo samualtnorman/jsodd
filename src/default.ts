@@ -32,6 +32,9 @@ const tryCatch: {
 	}
 }
 
+const isObject = (value: unknown): value is object =>
+	(!!value && typeof value == `object`) || typeof value == `function`
+
 /** `Object.isFrozen()` is bugged in V8, looks like it ignores the `.prototype` property or something. */
 const isActuallyFrozen = (target: object) => !Reflect.isExtensible(target) && Reflect.ownKeys(target).every(key => {
 	const { configurable, writable } = Reflect.getOwnPropertyDescriptor(target, key)!
@@ -124,8 +127,7 @@ export const mapFriendlyNames = (values: Record<string, object | symbol>): Frien
 
 			if ("value" in descriptor) {
 				if (
-					descriptor.value &&
-					(typeof descriptor.value == `object` || typeof descriptor.value == `function` || typeof descriptor.value == `symbol`) &&
+					(isObject(descriptor.value) || typeof descriptor.value == `function` || typeof descriptor.value == `symbol`) &&
 					!names.has(descriptor.value)
 				) {
 					const valueName = `${item.name}${keyName[0] == `[` ? `` : `.`}${keyName}`
@@ -169,10 +171,10 @@ const functionNameOrLengthDescriptorIsProper = (function_: object, descriptor: P
 	!descriptor.enumerable && !descriptor.writable && descriptor.configurable != Object.isSealed(function_)
 
 const functionNameDescriptorIsProper = (function_: object, descriptor?: PropertyDescriptor): descriptor is { configurable: boolean, enumerable: false, value: string } =>
-	typeof descriptor?.value == `string` && functionNameOrLengthDescriptorIsProper(function_, descriptor)
+	!!(typeof descriptor?.value == `string` && functionNameOrLengthDescriptorIsProper(function_, descriptor))
 
 const functionLengthDescriptorIsProper = (function_: object, descriptor?: PropertyDescriptor): descriptor is { configurable: boolean, enumerable: false, value: number } =>
-	typeof descriptor?.value == `number` && functionNameOrLengthDescriptorIsProper(function_, descriptor)
+	!!(typeof descriptor?.value == `number` && functionNameOrLengthDescriptorIsProper(function_, descriptor))
 
 const builtinFriendlyNames = mapFriendlyNames({
 	Function,
@@ -272,7 +274,7 @@ export const toDebugString = (value: unknown, {
 			o += JSON.stringify(value)
 		else if (typeof value == `symbol`)
 			o += symbolToDebugString(value, friendlyNames.map, valueName)
-		else if (typeof value == `function` || (value && typeof value == `object`)) {
+		else if (typeof value == `function` || isObject(value)) {
 			if (friendlyNames.map.has(value))
 				o += friendlyNames.map.get(value)!
 			else {
@@ -288,12 +290,27 @@ export const toDebugString = (value: unknown, {
 					o += `unextensible `
 
 				const keys = new Set(Reflect.ownKeys(value))
+				let isClass = false
+				const prototypeDescriptor = Reflect.getOwnPropertyDescriptor(value, `prototype`)
 
 				if (typeof value == `function`) {
 					if (isTerseMethod)
 						keys.delete(`name`)
 					else {
-						o += `function `
+						isClass = !!(
+							prototypeDescriptor &&
+							!prototypeDescriptor.configurable &&
+							!prototypeDescriptor.enumerable &&
+							!prototypeDescriptor.writable &&
+							isObject(prototypeDescriptor.value) &&
+							Reflect.getOwnPropertyDescriptor(prototypeDescriptor.value, `constructor`)?.value == value
+						)
+
+						if (isClass) {
+							o += `class `
+							keys.delete(`prototype`)
+						} else
+							o += `function `
 
 						const nameDescriptor = Reflect.getOwnPropertyDescriptor(value, `name`)
 
@@ -388,70 +405,89 @@ export const toDebugString = (value: unknown, {
 				if (numberObjectValue != undefined)
 					o += `\n${indent()}<primitive>: ${JSON.stringify(numberObjectValue)}`
 
-				for (const key of keys) {
-					const descriptor = Reflect.getOwnPropertyDescriptor(value, key)!
-					let prefix = `\n${indent()}`
+				const stringifyProperties = (value: object, keys: Set<string | symbol>, isStatic: boolean): void => {
+					for (const key of keys) {
+						const descriptor = Reflect.getOwnPropertyDescriptor(value, key)!
+						let prefix = `\n${indent()}`
 
-					if (!descriptor.configurable && !Object.isSealed(value))
-						prefix += `unconfigurable `
+						if (isStatic)
+							prefix += `static `
 
-					if (!descriptor.enumerable)
-						prefix += `unenumerable `
+						if (!descriptor.configurable && !Object.isSealed(value))
+							prefix += `unconfigurable `
 
-					if (descriptor.writable == false && !isActuallyFrozen(value))
-						prefix += `readonly `
-
-					let keyString
-					let keyName
-
-					if (typeof key == `symbol`) {
-						const symbolKey = Symbol.keyFor(key)
-
-						if (symbolKey != undefined)
-							keyString = keyName = `[Symbol.for(${JSON.stringify(symbolKey)})]`
-						else if (friendlyNames.map.has(key))
-							keyString = keyName = `[${friendlyNames.map.get(key)!}]`
-						else {
-							keyString = `[${symbolToDebugString(key, friendlyNames.map, `<symbol *${++friendlyNames.symbolReferenceCount}>`)} *${friendlyNames.symbolReferenceCount}]`
-							keyName = `[<symbol *${friendlyNames.symbolReferenceCount}>]`
-						}
-					} else
-						keyString = keyName = formatName(key)
-
-					const expectedFunctionName =
-						typeof key == `string` ? key : `[${WellKnownSymbols.get(key) || key.description}]`
-
-					const stringifyKeyAndValue = (value: unknown, expectedFunctionName: string, name: string) => {
-						let isTerseMethod = false
-
-						if (typeof value == `function`) {
-							const nameDescriptor = Reflect.getOwnPropertyDescriptor(value, `name`)
-							const lengthDescriptor = Reflect.getOwnPropertyDescriptor(value, `length`)
-
-							isTerseMethod = functionNameDescriptorIsProper(value, nameDescriptor) && nameDescriptor.value == expectedFunctionName && functionLengthDescriptorIsProper(value, lengthDescriptor)
+						if (isClass) {
+							if (descriptor.enumerable)
+								o += `enumerable `
+						} else {
+							if (!descriptor.enumerable)
+								prefix += `unenumerable `
 						}
 
-						if (!isTerseMethod)
-							o += `: `
+						if (descriptor.writable == false && !isActuallyFrozen(value))
+							prefix += `readonly `
 
-						stringify(value, name, isTerseMethod)
-					}
+						let keyString
+						let keyName
 
-					if ("value" in descriptor) {
-						o += `${prefix}${keyString}`
-						stringifyKeyAndValue(descriptor.value, expectedFunctionName, `${valueName}${valueName && valueName != `.` && keyName[0] == `[` ? `` : `.`}${keyName}`)
-					} else {
-						if (descriptor.get) {
-							o += `${prefix}get ${keyString}`
-							stringifyKeyAndValue(descriptor.get, `get ${expectedFunctionName}`, `${valueName}.<get ${keyName}>`)
+						if (typeof key == `symbol`) {
+							const symbolKey = Symbol.keyFor(key)
+
+							if (symbolKey != undefined)
+								keyString = keyName = `[Symbol.for(${JSON.stringify(symbolKey)})]`
+							else if (friendlyNames.map.has(key))
+								keyString = keyName = `[${friendlyNames.map.get(key)!}]`
+							else {
+								keyString = `[${symbolToDebugString(key, friendlyNames.map, `<symbol *${++friendlyNames.symbolReferenceCount}>`)} *${friendlyNames.symbolReferenceCount}]`
+								keyName = `[<symbol *${friendlyNames.symbolReferenceCount}>]`
+							}
+						} else
+							keyString = keyName = formatName(key)
+
+						const expectedFunctionName =
+							typeof key == `string` ? key : `[${WellKnownSymbols.get(key) || key.description}]`
+
+						const stringifyKeyAndValue = (value: unknown, expectedFunctionName: string, name: string) => {
+							let isTerseMethod = false
+
+							if (typeof value == `function`) {
+								const nameDescriptor = Reflect.getOwnPropertyDescriptor(value, `name`)
+								const lengthDescriptor = Reflect.getOwnPropertyDescriptor(value, `length`)
+
+								isTerseMethod = functionNameDescriptorIsProper(value, nameDescriptor) && nameDescriptor.value == expectedFunctionName && functionLengthDescriptorIsProper(value, lengthDescriptor)
+							}
+
+							if (!isTerseMethod)
+								o += `: `
+
+							stringify(value, name, isTerseMethod)
 						}
 
-						if (descriptor.set) {
-							o += `${prefix}set ${keyString}`
-							stringifyKeyAndValue(descriptor.set, `set ${expectedFunctionName}`, `${valueName}.<set ${keyName}>`)
+						if ("value" in descriptor) {
+							o += `${prefix}${keyString}`
+							stringifyKeyAndValue(descriptor.value, expectedFunctionName, `${valueName}${valueName && valueName != `.` && keyName[0] == `[` ? `` : `.`}${keyName}`)
+						} else {
+							if (descriptor.get) {
+								o += `${prefix}get ${keyString}`
+								stringifyKeyAndValue(descriptor.get, `get ${expectedFunctionName}`, `${valueName}.<get ${keyName}>`)
+							}
+
+							if (descriptor.set) {
+								o += `${prefix}set ${keyString}`
+								stringifyKeyAndValue(descriptor.set, `set ${expectedFunctionName}`, `${valueName}.<set ${keyName}>`)
+							}
 						}
 					}
 				}
+
+				if (isClass) {
+					const prototypePropertyKeys = new Set(Reflect.ownKeys(prototypeDescriptor!.value as object))
+
+					prototypePropertyKeys.delete(`constructor`)
+					stringifyProperties(prototypeDescriptor!.value as object, prototypePropertyKeys, false)
+				}
+
+				stringifyProperties(value, keys, isClass)
 
 				if (mapEntries) {
 					for (const [ index, key, value ] of mapEntries) {
@@ -912,13 +948,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`frozen function`, () => {
-		expect(toDebugString(Object.freeze(function foo() {}))).toMatchInlineSnapshot(`
-			"frozen function foo(0) {
-				unenumerable prototype: {
-					unenumerable constructor: .
-				}
-			}"
-		`)
+		expect(toDebugString(Object.freeze(function foo() {}))).toMatchInlineSnapshot(`"frozen class foo(0) {}"`)
 	})
 
 	test(`referencing builtin symbol key getter`, () => {
@@ -1019,6 +1049,26 @@ if (import.meta.vitest) {
 			"String {
 				<primitive>: "fo"
 				unconfigurable readonly 2: "o"
+			}"
+		`)
+	})
+
+	test(`class`, () => {
+		expect(toDebugString(class Foo {
+			bar() {}
+			get baz() { return 1 }
+			set baz(_) {}
+			static bar() {}
+			static get baz() { return 1 }
+			static set baz(_) {}
+		})).toMatchInlineSnapshot(`
+			"class Foo(0) {
+				bar(0) {}
+				get baz(0) {}
+				set baz(1) {}
+				static bar(0) {}
+				static get baz(0) {}
+				static set baz(1) {}
 			}"
 		`)
 	})
