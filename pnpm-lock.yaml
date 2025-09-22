@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   typescript:
-    hash: e9b90316636ce6aef429c22966a224c8c7620dd2489bb0065f0881b78fc7f325
+    hash: 7c21f54ae89c291e1bc0429307e9b2041895c77a7e84e6688ad953df95acafa9
     path: patches/typescript.patch
 
 importers:
@@ -37,7 +37,7 @@ importers:
         version: 1.0.0-beta.35
       typescript:
         specifier: ^5.9.2
-        version: 5.9.2(patch_hash=e9b90316636ce6aef429c22966a224c8c7620dd2489bb0065f0881b78fc7f325)
+        version: 5.9.2(patch_hash=7c21f54ae89c291e1bc0429307e9b2041895c77a7e84e6688ad953df95acafa9)
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.3.1)(jiti@2.5.1)(terser@5.43.1)
@@ -3035,7 +3035,7 @@ snapshots:
   tslib@2.8.1:
     optional: true
 
-  typescript@5.9.2(patch_hash=e9b90316636ce6aef429c22966a224c8c7620dd2489bb0065f0881b78fc7f325): {}
+  typescript@5.9.2(patch_hash=7c21f54ae89c291e1bc0429307e9b2041895c77a7e84e6688ad953df95acafa9): {}
 
   undici-types@7.10.0:
     optional: true

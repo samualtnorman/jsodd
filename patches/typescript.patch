@@ -23,7 +23,7 @@ index 22a0c174600b0376d9a7a2b010ce5652192e2114..0f3d39a995f3e89c22e3ef76d4b5ed77
      /**
       * A trap for the `delete` operator.
 diff --git a/lib/lib.es2015.reflect.d.ts b/lib/lib.es2015.reflect.d.ts
-index 3ee27b5250b6ad73b6bf62adead9fd8e4ea3186d..f41c25afc9c7bc104ddd166c940c94e99b7c5a9d 100644
+index 3ee27b5250b6ad73b6bf62adead9fd8e4ea3186d..af5d569e23d2770436c32272f3d02451e2da58ce 100644
 --- a/lib/lib.es2015.reflect.d.ts
 +++ b/lib/lib.es2015.reflect.d.ts
 @@ -52,7 +52,7 @@ declare namespace Reflect {
@@ -47,6 +47,15 @@ index 3ee27b5250b6ad73b6bf62adead9fd8e4ea3186d..f41c25afc9c7bc104ddd166c940c94e9
  
      /**
       * Returns the prototype of an object.
+@@ -110,7 +107,7 @@ declare namespace Reflect {
+      * are those that are defined directly on that object, and are not inherited from the object's prototype.
+      * @param target Object that contains the own properties.
+      */
+-    function ownKeys(target: object): (string | symbol)[];
++    function ownKeys<T extends object>(target: T): (keyof T)[];
+ 
+     /**
+      * Prevents the addition of new properties to an object.
 diff --git a/lib/lib.es2017.object.d.ts b/lib/lib.es2017.object.d.ts
 index 523b05dc8b9573752ea2b305481b13db716e4e92..21cfb4a917b0c1addfbe4a3450e3152b36bf555d 100644
 --- a/lib/lib.es2017.object.d.ts
@@ -59,7 +68,7 @@ index 523b05dc8b9573752ea2b305481b13db716e4e92..21cfb4a917b0c1addfbe4a3450e3152b
 +    getOwnPropertyDescriptors<T>(o: T): PropertyDescriptorMap;
  }
 diff --git a/lib/lib.es5.d.ts b/lib/lib.es5.d.ts
-index 5452bfe2e401f0397e18f9a373736a6117419506..49e40003316182baab9ed04a2e2c904ef4be7daf 100644
+index 5452bfe2e401f0397e18f9a373736a6117419506..27c15f68326214c717e2171385887a881513cce8 100644
 --- a/lib/lib.es5.d.ts
 +++ b/lib/lib.es5.d.ts
 @@ -107,19 +107,53 @@ interface Symbol {
@@ -129,6 +138,15 @@ index 5452bfe2e401f0397e18f9a373736a6117419506..49e40003316182baab9ed04a2e2c904e
  
      /**
       * Gets the own property descriptor of the specified object.
+@@ -179,7 +213,7 @@ interface ObjectConstructor {
+      * on that object, and are not inherited from the object's prototype. The properties of an object include both fields (objects) and functions.
+      * @param o Object that contains the own properties.
+      */
+-    getOwnPropertyNames(o: any): string[];
++    getOwnPropertyNames<T>(o: T): Extract<keyof T, string>[];
+ 
+     /**
+      * Creates an object that has the specified prototype or that has null prototype.
 @@ -192,7 +226,7 @@ interface ObjectConstructor {
       * @param o Object to use as a prototype. May be null
       * @param properties JavaScript object that contains one or more property descriptors.

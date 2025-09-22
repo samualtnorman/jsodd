@@ -316,7 +316,9 @@ export const toDebugString = (value: unknown, {
 			o += JSON.stringify(value)
 		else if (typeof value == `symbol`)
 			o += symbolToDebugString(value, friendlyNames.map, valueName)
-		else if (typeof value == `function` || isObject(value)) {
+		else if (JSON.isRawJSON?.(value)) {
+			o += `RawJSON ${JSON.stringify(value.rawJSON)}`
+		} else if (typeof value == `function` || isObject(value)) {
 			if (friendlyNames.map.has(value))
 				o += friendlyNames.map.get(value)!
 			else {
@@ -453,6 +455,11 @@ export const toDebugString = (value: unknown, {
 				if (isPromise)
 					o += `Promise `
 
+				const symbolObjectValue = tryCatch(() => Symbol.prototype.valueOf.call(value))
+
+				if (symbolObjectValue)
+					o += `Symbol `
+
 				const isArray = Array.isArray(value) || typedArrayAttributes
 
 				o += isArray ? `[` : `{`
@@ -472,6 +479,9 @@ export const toDebugString = (value: unknown, {
 
 				if (numberObjectValue != undefined)
 					stringifyEntry(`<primitive>`, JSON.stringify(numberObjectValue))
+
+				if (symbolObjectValue)
+					stringifyEntry(`<primitive>`, `${symbolToDebugString(symbolObjectValue, friendlyNames.map, `${valueName}.<primitive>`)}`)
 
 				const stringifyProperties = (value: object, keys: Set<string | symbol>, isStatic: boolean): void => {
 					for (const key of keys) {
@@ -648,6 +658,8 @@ export const toDebugString = (value: unknown, {
 						WeakRef.prototype
 					: isPromise ?
 						Promise.prototype
+					: symbolObjectValue ?
+						Symbol.prototype
 					: Object.prototype
 
 				if (prototype != expectedPrototype) {
@@ -657,7 +669,7 @@ export const toDebugString = (value: unknown, {
 
 				indentLevel--
 
-				if (keys.size || mapEntries?.length || prototype != expectedPrototype || stack != undefined || setValues?.length || arrayBufferByteLength != undefined || sharedArrayBufferByteLength != undefined || typedArrayAttributes || booleanObjectValue != undefined || numberObjectValue != undefined || stringObjectValue != undefined || dataViewAttributes)
+				if (keys.size || mapEntries?.length || prototype != expectedPrototype || stack != undefined || setValues?.length || arrayBufferByteLength != undefined || sharedArrayBufferByteLength != undefined || typedArrayAttributes || booleanObjectValue != undefined || numberObjectValue != undefined || stringObjectValue != undefined || dataViewAttributes || symbolObjectValue)
 					o += `\n${indent()}`
 
 				o += isArray ? `]` : `}`
@@ -1198,6 +1210,22 @@ if (import.meta.vitest) {
 	test(`weak ref`, () => {
 		expect(toDebugString(new WeakRef({}))).toMatchInlineSnapshot(`
 			"WeakRef {}"
+		`)
+	})
+
+	if (JSON.rawJSON) {
+		test(`raw json`, () => {
+			expect(toDebugString(JSON.rawJSON!("10000000000000001"))).toMatchInlineSnapshot(`
+				"RawJSON "10000000000000001""
+			`)
+		})
+	}
+
+	test(`symbol object`, () => {
+		expect(toDebugString(Object(Symbol("foo")))).toMatchInlineSnapshot(`
+			"Symbol {
+				<primitive>: Symbol("foo")
+			}"
 		`)
 	})
 }
