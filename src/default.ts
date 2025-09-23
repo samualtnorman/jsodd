@@ -79,14 +79,20 @@ const getErrorStack = (error: unknown): string | undefined => tryCatch(() => err
 const getArrayBufferByteLength = (value: unknown): number | undefined => tryCatch(() => arrayBufferByteLengthGetter.call(value))
 const getSharedArrayBufferByteLength = (value: unknown) => tryCatch(() => sharedArrayBufferByteLengthGetter?.call(value) as number | undefined)
 
+const typedArrayBufferGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, `buffer`).get!
+const typedArrayByteLengthGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteLength").get!
+const typedArrayByteOffsetGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteOffset").get!
+const typedArrayLengthGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "length").get!
+const typedArrayTagGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag).get!
+
 const getTypedArrayAttributes = (value: unknown):
 	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, tag: string } | undefined =>
 	tryCatch(() => ({
-		buffer: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, `buffer`).get!.call(value),
-		byteLength: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteLength").get!.call(value),
-		byteOffset: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteOffset").get!.call(value),
-		length: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "length").get!.call(value),
-		tag: Reflect.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag).get!.call(value)
+		buffer: typedArrayBufferGetter.call(value),
+		byteLength: typedArrayByteLengthGetter.call(value),
+		byteOffset: typedArrayByteOffsetGetter.call(value),
+		length: typedArrayLengthGetter.call(value),
+		tag: typedArrayTagGetter.call(value)
 	}))
 
 const getDataViewAttributes = (value: unknown):
@@ -95,6 +101,17 @@ const getDataViewAttributes = (value: unknown):
 		buffer: dataViewBufferGetter.call(value),
 		byteLength: dataViewByteLengthGetter.call(value),
 		byteOffset: dataViewByteOffsetGetter.call(value)
+	}))
+
+const domExceptionNameGetter = Reflect.getOwnPropertyDescriptor(DOMException.prototype, `name`).get!
+const domExceptionMessageGetter = Reflect.getOwnPropertyDescriptor(DOMException.prototype, `message`).get!
+const domExceptionCodeGetter = Reflect.getOwnPropertyDescriptor(DOMException.prototype, `code`).get
+
+const getDOMExceptionAttributes = (value: unknown): { name: string, message: string, code: number | undefined } | undefined =>
+	tryCatch(() => ({
+		name: domExceptionNameGetter.call(value),
+		message: domExceptionMessageGetter.call(value),
+		code: domExceptionCodeGetter?.call(value)
 	}))
 
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
@@ -287,7 +304,9 @@ const builtinFriendlyNames = mapFriendlyNames({
 	"<SegmentsIteratorPrototype>": SegmentsIteratorPrototype,
 
 	Intl,
-	Promise
+	Promise,
+
+	DOMException
 })
 
 type ToDebugStringOptions = LaxPartial<{
@@ -460,6 +479,11 @@ export const toDebugString = (value: unknown, {
 				if (symbolObjectValue)
 					o += `Symbol `
 
+				const domExceptionAttributes = getDOMExceptionAttributes(value)
+
+				if (domExceptionAttributes)
+					o += `DOMException `
+
 				const isArray = Array.isArray(value) || typedArrayAttributes
 
 				o += isArray ? `[` : `{`
@@ -528,7 +552,7 @@ export const toDebugString = (value: unknown, {
 						const stringifyKeyAndValue = (value: unknown, expectedFunctionName: string, name: string) => {
 							let isTerseMethod = false
 
-							if (typeof value == `function`) {
+							if (typeof value == `function` && !friendlyNames.map.has(value)) {
 								const nameDescriptor = Reflect.getOwnPropertyDescriptor(value, `name`)
 								const lengthDescriptor = Reflect.getOwnPropertyDescriptor(value, `length`)
 
@@ -610,6 +634,15 @@ export const toDebugString = (value: unknown, {
 					o += `\n${indent()}<byteLength>: ${dataViewAttributes.byteLength}\n${indent()}<byteOffset>: ${dataViewAttributes.byteOffset}`
 				}
 
+				if (domExceptionAttributes) {
+					const { name, message, code } = domExceptionAttributes
+
+					o += `\n${indent()}<name>: ${JSON.stringify(name)}\n${indent()}<message>: ${JSON.stringify(message)}`
+
+					if (code != undefined)
+						o += `\n${indent()}<code>: ${JSON.stringify(code)}`
+				}
+
 				const prototype = Reflect.getPrototypeOf(value)
 
 				const expectedPrototype =
@@ -660,6 +693,8 @@ export const toDebugString = (value: unknown, {
 						Promise.prototype
 					: symbolObjectValue ?
 						Symbol.prototype
+					: domExceptionAttributes ?
+						DOMException.prototype
 					: Object.prototype
 
 				if (prototype != expectedPrototype) {
@@ -669,7 +704,13 @@ export const toDebugString = (value: unknown, {
 
 				indentLevel--
 
-				if (keys.size || mapEntries?.length || prototype != expectedPrototype || stack != undefined || setValues?.length || arrayBufferByteLength != undefined || sharedArrayBufferByteLength != undefined || typedArrayAttributes || booleanObjectValue != undefined || numberObjectValue != undefined || stringObjectValue != undefined || dataViewAttributes || symbolObjectValue)
+				if (
+					keys.size || mapEntries?.length || prototype != expectedPrototype || stack != undefined ||
+					setValues?.length || arrayBufferByteLength != undefined ||
+					sharedArrayBufferByteLength != undefined || typedArrayAttributes ||
+					booleanObjectValue != undefined || numberObjectValue != undefined ||
+					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue || domExceptionAttributes
+				)
 					o += `\n${indent()}`
 
 				o += isArray ? `]` : `}`
