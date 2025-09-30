@@ -59,11 +59,12 @@ const RegExpStringIteratorHelper = Reflect.getPrototypeOf(/a/[Symbol.matchAll](`
 const segments = new Intl.Segmenter().segment(``)
 const SegmentsPrototype = Reflect.getPrototypeOf(segments)!
 const SegmentsIteratorPrototype = Reflect.getPrototypeOf(segments[Symbol.iterator]())!
-const IteratorHelperPrototype = Reflect.getPrototypeOf(arrayIterator.map(_ => _))!
+const IteratorHelperPrototype = (arrayIterator.map && Reflect.getPrototypeOf(arrayIterator.map(_ => _))!) as object | undefined
 
 const regExpSourceGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, `source`).get!
 const regExpFlagsGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, `flags`).get!
-const errorStackGetter = Reflect.getOwnPropertyDescriptor(Error(), `stack`)?.get || Reflect.getOwnPropertyDescriptor(Error.prototype, `stack`)?.get
+const v8ErrorStackDescriptor = Reflect.getOwnPropertyDescriptor(Error(), `stack`) as PropertyDescriptor<string | undefined> | undefined
+const errorStackGetter = v8ErrorStackDescriptor?.get || Reflect.getOwnPropertyDescriptor(Error.prototype, `stack`)?.get
 const arrayBufferByteLengthGetter = Reflect.getOwnPropertyDescriptor(ArrayBuffer.prototype, `byteLength`).get!
 
 const sharedArrayBufferByteLengthGetter = typeof SharedArrayBuffer == `function`
@@ -298,7 +299,7 @@ const builtinFriendlyNames = mapFriendlyNames({
 	"<StringIteratorPrototype>": StringIteratorPrototype,
 	"<MapIteratorPrototype>": MapIteratorPrototype,
 	"<SetIteratorPrototype>": SetIteratorPrototype,
-	"<IteratorHelperPrototype>": IteratorHelperPrototype,
+	...IteratorHelperPrototype && { "<IteratorHelperPrototype>": IteratorHelperPrototype },
 	"<RegExpStringIteratorHelper>": RegExpStringIteratorHelper,
 	"<SegmentsPrototype>": SegmentsPrototype,
 	"<SegmentsIteratorPrototype>": SegmentsIteratorPrototype,
@@ -306,7 +307,11 @@ const builtinFriendlyNames = mapFriendlyNames({
 	Intl,
 	Promise,
 
-	DOMException
+	DOMException,
+	EventTarget,
+	Event,
+	...v8ErrorStackDescriptor?.get && { "<V8ErrorStackGetter>": v8ErrorStackDescriptor.get },
+	...v8ErrorStackDescriptor?.set && { "<V8ErrorStackSetter>": v8ErrorStackDescriptor.set }
 })
 
 type ToDebugStringOptions = LaxPartial<{
