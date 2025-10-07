@@ -60,6 +60,7 @@ const segments = new Intl.Segmenter().segment(``)
 const SegmentsPrototype = Reflect.getPrototypeOf(segments)!
 const SegmentsIteratorPrototype = Reflect.getPrototypeOf(segments[Symbol.iterator]())!
 const IteratorHelperPrototype = (arrayIterator.map && Reflect.getPrototypeOf(arrayIterator.map(_ => _))!) as object | undefined
+const WrapForValidIteratorPrototype = typeof Iterator == `function` ? Reflect.getPrototypeOf(Iterator.from({} as any))! : undefined
 
 const regExpSourceGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, `source`).get!
 const regExpFlagsGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, `flags`).get!
@@ -222,6 +223,9 @@ const functionLengthDescriptorIsProper = (function_: object, descriptor?: Proper
 	descriptor is { configurable: boolean, enumerable: false, value: number, writable: false } =>
 	!!(typeof descriptor?.value == `number` && functionNameOrLengthDescriptorIsProper(function_, descriptor))
 
+declare const InternalError: object
+declare const Temporal: object
+
 const builtinFriendlyNames = mapFriendlyNames({
 	Function,
 	Object,
@@ -237,13 +241,13 @@ const builtinFriendlyNames = mapFriendlyNames({
 	SyntaxError,
 	TypeError,
 	URIError,
-	// InternalError,
+	...typeof InternalError != `undefined` && { InternalError },
 
 	Number,
 	BigInt,
 	Math,
 	Date,
-	// Temporal,
+	...typeof Temporal != `undefined` && { Temporal },
 
 	String,
 	RegExp,
@@ -286,8 +290,8 @@ const builtinFriendlyNames = mapFriendlyNames({
 	decodeURIComponent,
 	encodeURI,
 	encodeURIComponent,
-	escape,
-	unescape,
+	...typeof escape != `undefined` && { escape },
+	...typeof unescape != `undefined` && { unescape },
 
 	...typeof AsyncDisposableStack != `undefined` ? { AsyncDisposableStack } : undefined,
 	"<AsyncFunction>": AsyncFunction,
@@ -303,6 +307,7 @@ const builtinFriendlyNames = mapFriendlyNames({
 	"<RegExpStringIteratorHelper>": RegExpStringIteratorHelper,
 	"<SegmentsPrototype>": SegmentsPrototype,
 	"<SegmentsIteratorPrototype>": SegmentsIteratorPrototype,
+	...WrapForValidIteratorPrototype && { "<WrapForValidIteratorPrototype>": WrapForValidIteratorPrototype },
 
 	Intl,
 	Promise,
@@ -358,27 +363,12 @@ export const toDebugString = (value: unknown, {
 					o += `unextensible `
 
 				const keys = new Set(Reflect.ownKeys(value))
-				let isClass = false
-				const prototypeDescriptor = Reflect.getOwnPropertyDescriptor(value, `prototype`)
 
 				if (typeof value == `function`) {
 					if (isTerseMethod)
 						keys.delete(`name`)
 					else {
-						isClass = !!(
-							prototypeDescriptor &&
-							!prototypeDescriptor.configurable &&
-							!prototypeDescriptor.enumerable &&
-							!prototypeDescriptor.writable &&
-							isObject(prototypeDescriptor.value) &&
-							Reflect.getOwnPropertyDescriptor(prototypeDescriptor.value, `constructor`)?.value == value
-						)
-
-						if (isClass) {
-							o += `class `
-							keys.delete(`prototype`)
-						} else
-							o += `function `
+						o += `function `
 
 						const nameDescriptor = Reflect.getOwnPropertyDescriptor(value, `name`)
 
@@ -523,13 +513,8 @@ export const toDebugString = (value: unknown, {
 						if (!descriptor.configurable && !Object.isSealed(value))
 							prefix += `unconfigurable `
 
-						if (isClass) {
-							if (descriptor.enumerable)
-								prefix += `enumerable `
-						} else {
-							if (!descriptor.enumerable)
-								prefix += `unenumerable `
-						}
+						if (!descriptor.enumerable)
+							prefix += `unenumerable `
 
 						if (descriptor.writable == false && !isActuallyFrozen(value))
 							prefix += `readonly `
@@ -587,14 +572,7 @@ export const toDebugString = (value: unknown, {
 					}
 				}
 
-				if (isClass) {
-					const prototypePropertyKeys = new Set(Reflect.ownKeys(prototypeDescriptor!.value as object))
-
-					prototypePropertyKeys.delete(`constructor`)
-					stringifyProperties(prototypeDescriptor!.value as object, prototypePropertyKeys, false)
-				}
-
-				stringifyProperties(value, keys, isClass)
+				stringifyProperties(value, keys, false)
 
 				if (mapEntries) {
 					for (const [ index, key, value ] of mapEntries) {
@@ -1094,7 +1072,13 @@ if (import.meta.vitest) {
 	})
 
 	test(`frozen function`, () => {
-		expect(toDebugString(Object.freeze(function foo() {}))).toMatchInlineSnapshot(`"frozen class foo(0) {}"`)
+		expect(toDebugString(Object.freeze(function foo() {}))).toMatchInlineSnapshot(`
+			"frozen function foo(0) {
+				unenumerable prototype: {
+					unenumerable constructor: .
+				}
+			}"
+		`)
 	})
 
 	test(`referencing builtin symbol key getter`, () => {
@@ -1208,13 +1192,16 @@ if (import.meta.vitest) {
 			static get baz() { return 1 }
 			static set baz(_) {}
 		})).toMatchInlineSnapshot(`
-			"class Foo(0) {
-				bar(0) {}
-				get baz(0) {}
-				set baz(1) {}
-				static bar(0) {}
-				static get baz(0) {}
-				static set baz(1) {}
+			"function Foo(0) {
+				unconfigurable unenumerable readonly prototype: {
+					unenumerable constructor: .
+					unenumerable bar(0) {}
+					unenumerable get baz(0) {}
+					unenumerable set baz(1) {}
+				}
+				unenumerable bar(0) {}
+				unenumerable get baz(0) {}
+				unenumerable set baz(1) {}
 			}"
 		`)
 	})
