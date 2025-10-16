@@ -775,7 +775,7 @@ if (import.meta.vitest) {
 
 		expect(toDebugString({ [symbol]: symbol })).toMatchInlineSnapshot(`
 			"{
-				[Symbol("foo") *1]: <symbol *1>
+				[Symbol("foo") *7]: <symbol *7>
 			}"
 		`)
 	})
@@ -786,10 +786,10 @@ if (import.meta.vitest) {
 		expect(toDebugString({ a: { [symbol]: symbol }, b: { [symbol]: symbol } })).toMatchInlineSnapshot(`
 			"{
 				a: {
-					[Symbol("foo") *1]: <symbol *1>
+					[Symbol("foo") *7]: <symbol *7>
 				}
 				b: {
-					[<symbol *1>]: <symbol *1>
+					[<symbol *7>]: <symbol *7>
 				}
 			}"
 		`)
@@ -993,9 +993,9 @@ if (import.meta.vitest) {
 			[c]: a
 		})).toMatchInlineSnapshot(`
 			"{
-				[Symbol("a") *1]: Symbol("b")
-				[.[<symbol *1>]]: Symbol("c")
-				[.[.[<symbol *1>]]]: <symbol *1>
+				[Symbol("a") *7]: Symbol("b")
+				[.[<symbol *7>]]: Symbol("c")
+				[.[.[<symbol *7>]]]: <symbol *7>
 			}"
 		`)
 	})
@@ -1014,9 +1014,9 @@ if (import.meta.vitest) {
 		})).toMatchInlineSnapshot(`
 			"{
 				foo: {
-					[Symbol("a") *1]: Symbol("b")
-					[.foo[<symbol *1>]]: Symbol("c")
-					[.foo[.foo[<symbol *1>]]]: <symbol *1>
+					[Symbol("a") *7]: Symbol("b")
+					[.foo[<symbol *7>]]: Symbol("c")
+					[.foo[.foo[<symbol *7>]]]: <symbol *7>
 				}
 			}"
 		`)
