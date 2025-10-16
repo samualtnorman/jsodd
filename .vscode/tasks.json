@@ -1,0 +1,36 @@
+// See https://go.microsoft.com/fwlink/?LinkId=733558
+// for the documentation about the tasks.json format
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "VSCode Extension: Emit package.json",
+			"type": "shell",
+			"command": "node ${workspaceFolder}/vscode-extension/scripts/emit-package-json.js",
+			"options": { "cwd": "${workspaceFolder}/vscode-extension" },
+			"problemMatcher": [],
+			"group": "build",
+			"runOptions": { "instanceLimit": 1 },
+			"presentation": { "reveal": "silent" },
+			"isBackground": true
+		},
+		{
+			"label": "VSCode Extension: Copy Language Configuration and Grammar",
+			"type": "shell",
+			"command": "cp {language-configuration,jsodd.tmLanguage}.json dist",
+			"options": { "cwd": "${workspaceFolder}/vscode-extension" },
+			"problemMatcher": [],
+			"group": "build",
+			"runOptions": { "instanceLimit": 1 },
+			"presentation": { "reveal": "silent" },
+			"isBackground": true
+		},
+		{
+			"label": "Run Extension Pre Launch",
+			"dependsOn": [
+				"VSCode Extension: Emit package.json",
+				"VSCode Extension: Copy Language Configuration and Grammar"
+			]
+		}
+	]
+}

@@ -1,0 +1,39 @@
+{
+	"name": "jsodd",
+	"displayName": "JSODD",
+	"description": "JSODD syntax",
+	"license": "MIT",
+	"repository": "github:samualtnorman/jsodd",
+	"version": "0.0.0",
+	"type": "module",
+	"engines": {
+		"node": "^24",
+		"pnpm": "^10",
+		"vscode": "^1.104.0"
+	},
+	"publisher": "samual",
+	"categories": [
+		"Programming Languages"
+	],
+	"contributes": {
+		"languages": [
+			{
+				"id": "jsodd",
+				"aliases": [
+					"JSODD"
+				],
+				"extensions": [
+					".jsodd"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "jsodd",
+				"scopeName": "source.jsodd",
+				"path": "./jsodd.tmLanguage.json"
+			}
+		]
+	}
+}

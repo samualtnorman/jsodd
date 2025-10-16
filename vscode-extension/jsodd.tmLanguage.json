@@ -1,0 +1,119 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "JSODD",
+	"patterns": [
+		{ "include": "#function" },
+		{ "include": "#constant" },
+		{ "include": "#modifier" },
+		{ "include": "#storageTypeProperty" },
+		{ "include": "#identifier" },
+		{ "include": "#identifierCapitalised" },
+		{ "include": "#number" },
+		{ "include": "#bigint" },
+		{ "include": "#string" },
+		{ "include": "#regex" },
+		{ "include": "#hex" },
+		{ "include": "#accessor" },
+		{ "include": "#separator" },
+		{ "include": "#braceRoundBegin" },
+		{ "include": "#braceRoundEnd" },
+		{ "include": "#braceSquareBegin" },
+		{ "include": "#braceSquareEnd" },
+		{ "include": "#braceAngleBegin" },
+		{ "include": "#braceAngleEnd" },
+		{ "include": "#blockBegin" },
+		{ "include": "#blockEnd" },
+		{ "include": "#reference" }
+	],
+	"repository": {
+		"function": {
+			"name": "storage.type.$1.jsodd",
+			"match": "(function|symbol)(?!\\w)"
+		},
+		"constant": {
+			"name": "constant.language.$1.jsodd",
+			"match": "(true|false|null|undefined)(?!\\w)"
+		},
+		"modifier": {
+			"name": "storage.modifier.$1.jsodd",
+			"match": "(unconfigurable|unenumerable|readonly|unextensible|sealed|frozen)(?!\\w)"
+		},
+		"storageTypeProperty": {
+			"name": "storage.type.property.$1.jsodd",
+			"match": "[gs]et(?!\\w)"
+		},
+		"identifier": {
+			"name": "variable.other.jsodd",
+			"match": "[a-z_$][\\w$]*"
+		},
+		"identifierCapitalised": {
+			"name": "variable.other.constant.jsodd",
+			"match": "[A-Z][\\w$]*"
+		},
+		"number": {
+			"name": "constant.numeric.number.jsodd",
+			"match": "-?(?:[1-9]\\d*|0)(?:\\.\\d+)?(?:[eE][-+]?\\d+)?(?!\\w)"
+		},
+		"bigint": {
+			"name": "constant.numeric.bigint.jsodd",
+			"match": "-?(?:[1-9]\\d*|0)n"
+		},
+		"reference": {
+			"name": "constant.numeric.reference.jsodd",
+			"match": "\\*[1-9]\\d*"
+		},
+		"string": {
+			"name": "string.quoted.double.jsodd",
+			"match": "\"(?:[^\"\\\\\\x00-\\x19]|\\\\(?:[\"\\\\bfnrt]|u[\\dA-F]{4}))*\""
+		},
+		"regex": {
+			"name": "string.regexp.jsodd",
+			"match": "/[^/]+/[a-z]*"
+		},
+		"hex": {
+			"name": "string.hex.jsodd",
+			"match": "<[\\dA-F]{2}(?: [\\dA-F]{2})*>"
+		},
+		"accessor": {
+			"name": "punctuation.accessor.jsodd",
+			"match": "\\."
+		},
+		"separator": {
+			"name": "punctuation.separator.key-value",
+			"match": ":"
+		},
+		"braceRoundBegin": {
+			"name": "meta.brace.round.begin.jsodd",
+			"match": "\\("
+		},
+		"braceRoundEnd": {
+			"name": "meta.brace.round.end.jsodd",
+			"match": "\\)"
+		},
+		"braceSquareBegin": {
+			"name": "meta.brace.square.begin.jsodd",
+			"match": "\\["
+		},
+		"braceSquareEnd": {
+			"name": "meta.brace.square.end.jsodd",
+			"match": "]"
+		},
+		"braceAngleBegin": {
+			"name": "meta.brace.angle.begin.jsodd",
+			"match": "<"
+		},
+		"braceAngleEnd": {
+			"name": "meta.brace.angle.end.jsodd",
+			"match": ">"
+		},
+		"blockBegin": {
+			"name": "punctuation.definition.block.begin.jsodd",
+			"match": "{"
+		},
+		"blockEnd": {
+			"name": "punctuation.definition.block.end.jsodd",
+			"match": "}"
+		}
+	},
+	"scopeName": "source.jsodd"
+}
