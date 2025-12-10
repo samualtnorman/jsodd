@@ -10,16 +10,16 @@
 	"license": "MIT",
 	"type": "module",
 	"dependencies": {
-		"@samual/types": "jsr:0.0.2-23ffc7f"
+		"@samual/types": "jsr:0.0.2-e3377b5"
 	},
 	"devDependencies": {
 		"@babel/plugin-syntax-typescript": "^7.27.1",
-		"@rollup/plugin-babel": "^6.0.4",
-		"@samual/rolldown-config": "jsr:0.0.1-eb70092",
+		"@rollup/plugin-babel": "^6.1.0",
+		"@samual/rolldown-config": "jsr:0.0.1-5e79465",
 		"@total-typescript/ts-reset": "^0.6.1",
 		"babel-plugin-here": "^1.0.2",
-		"rolldown": "1.0.0-beta.35",
-		"typescript": "^5.9.2",
-		"vitest": "^3.2.4"
+		"rolldown": "1.0.0-beta.53",
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.15"
 	}
 }
