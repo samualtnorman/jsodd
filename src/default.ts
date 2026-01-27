@@ -118,7 +118,7 @@ const getDOMExceptionAttributes = (value: unknown): { name: string, message: str
 
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
 
-const symbolToDebugString = (symbol: symbol, names: Map<unknown, string>, valueName: string): string => {
+const symbolToJsodd = (symbol: symbol, names: Map<unknown, string>, valueName: string): string => {
 	const symbolKey = Symbol.keyFor(symbol)
 
 	if (symbolKey != undefined)
@@ -319,7 +319,7 @@ const builtinFriendlyNames = mapFriendlyNames({
 	...v8ErrorStackDescriptor?.set && { "<V8ErrorStackSetter>": v8ErrorStackDescriptor.set }
 })
 
-type ToDebugStringOptions = LaxPartial<{
+type ToJsoddOptions = LaxPartial<{
 	indentLevel: number
 	indentString: string
 	friendlyNames: FriendlyNames
@@ -348,12 +348,12 @@ const toJsoddString = (string: string, { indentLevel = 0, indentString = `\t` }:
 	return JSON.stringify(string)
 }
 
-export const toDebugString = (value: unknown, {
+export const toJsodd = (value: unknown, {
 	indentLevel = 0,
 	indentString = `\t`,
 	friendlyNames = cloneFriendlyNames(builtinFriendlyNames),
 	valueName = ``
-}: ToDebugStringOptions = {}): string => {
+}: ToJsoddOptions = {}): string => {
 	let o = ``
 
 	stringify(value, valueName)
@@ -366,7 +366,7 @@ export const toDebugString = (value: unknown, {
 		else if (typeof value == `string`)
 			o += toJsoddString(value, { indentLevel: indentLevel + 1, indentString })
 		else if (typeof value == `symbol`)
-			o += symbolToDebugString(value, friendlyNames.map, valueName)
+			o += symbolToJsodd(value, friendlyNames.map, valueName)
 		else if (JSON.isRawJSON?.(value)) {
 			o += `RawJSON ${JSON.stringify(value.rawJSON)}`
 		} else if (typeof value == `function` || isObject(value)) {
@@ -522,7 +522,7 @@ export const toDebugString = (value: unknown, {
 					stringifyEntry(`<primitive>`, JSON.stringify(numberObjectValue))
 
 				if (symbolObjectValue)
-					stringifyEntry(`<primitive>`, `${symbolToDebugString(symbolObjectValue, friendlyNames.map, `${valueName}.<primitive>`)}`)
+					stringifyEntry(`<primitive>`, `${symbolToJsodd(symbolObjectValue, friendlyNames.map, `${valueName}.<primitive>`)}`)
 
 				const stringifyProperties = (value: object, keys: Set<string | symbol>, isStatic: boolean): void => {
 					for (const key of keys) {
@@ -552,7 +552,7 @@ export const toDebugString = (value: unknown, {
 							else if (friendlyNames.map.has(key))
 								keyString = keyName = `[${friendlyNames.map.get(key)!}]`
 							else {
-								keyString = `[${symbolToDebugString(key, friendlyNames.map, `<symbol *${++friendlyNames.symbolReferenceCount}>`)} *${friendlyNames.symbolReferenceCount}]`
+								keyString = `[${symbolToJsodd(key, friendlyNames.map, `<symbol *${++friendlyNames.symbolReferenceCount}>`)} *${friendlyNames.symbolReferenceCount}]`
 								keyName = `[<symbol *${friendlyNames.symbolReferenceCount}>]`
 							}
 						} else
@@ -729,45 +729,45 @@ if (import.meta.vitest) {
 	const { test, expect } = import.meta.vitest
 
 	test(`undefined`, () => {
-		expect(toDebugString(undefined)).toBe(`undefined`)
+		expect(toJsodd(undefined)).toBe(`undefined`)
 	})
 
 	test(`null`, () => {
-		expect(toDebugString(null)).toBe(`null`)
+		expect(toJsodd(null)).toBe(`null`)
 	})
 
 	test(`boolean`, () => {
-		expect(toDebugString(true)).toBe(`true`)
-		expect(toDebugString(false)).toBe(`false`)
+		expect(toJsodd(true)).toBe(`true`)
+		expect(toJsodd(false)).toBe(`false`)
 	})
 
 	test(`number`, () => {
-		expect(toDebugString(1)).toBe(`1`)
+		expect(toJsodd(1)).toBe(`1`)
 	})
 
 	test(`bigint`, () => {
-		expect(toDebugString(1n)).toBe(`1n`)
+		expect(toJsodd(1n)).toBe(`1n`)
 	})
 
 	test(`string`, () => {
-		expect(toDebugString(`foo`)).toBe(`"foo"`)
+		expect(toJsodd(`foo`)).toBe(`"foo"`)
 	})
 
 	test(`symbol`, () => {
-		expect(toDebugString(Symbol())).toBe(`Symbol()`)
-		expect(toDebugString(Symbol(`foo`))).toBe(`Symbol("foo")`)
+		expect(toJsodd(Symbol())).toBe(`Symbol()`)
+		expect(toJsodd(Symbol(`foo`))).toBe(`Symbol("foo")`)
 	})
 
 	test(`symbol registry`, () => {
-		expect(toDebugString(Symbol.for(`foo`))).toBe(`Symbol.for("foo")`)
+		expect(toJsodd(Symbol.for(`foo`))).toBe(`Symbol.for("foo")`)
 	})
 
 	test(`well-known symbol`, () => {
-		expect(toDebugString(Symbol.iterator)).toBe(`Symbol.iterator`)
+		expect(toJsodd(Symbol.iterator)).toBe(`Symbol.iterator`)
 	})
 
 	test(`object`, () => {
-		expect(toDebugString({ foo: `bar` })).toMatchInlineSnapshot(`
+		expect(toJsodd({ foo: `bar` })).toMatchInlineSnapshot(`
 			"{
 				foo: "bar"
 			}"
@@ -775,7 +775,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`generator object`, () => {
-		expect(toDebugString((function* () {})())).toMatchInlineSnapshot(`
+		expect(toJsodd((function* () {})())).toMatchInlineSnapshot(`
 			"{
 				<prototype>: {
 					<prototype>: <GeneratorPrototype>
@@ -785,7 +785,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`symbol key`, () => {
-		expect(toDebugString({ [Symbol.toStringTag]: `Foo` })).toMatchInlineSnapshot(`
+		expect(toJsodd({ [Symbol.toStringTag]: `Foo` })).toMatchInlineSnapshot(`
 			"{
 				[Symbol.toStringTag]: "Foo"
 			}"
@@ -795,7 +795,7 @@ if (import.meta.vitest) {
 	test(`symbol as key and value`, () => {
 		const symbol = Symbol(`foo`)
 
-		expect(toDebugString({ [symbol]: symbol })).toMatchInlineSnapshot(`
+		expect(toJsodd({ [symbol]: symbol })).toMatchInlineSnapshot(`
 			"{
 				[Symbol("foo") *7]: <symbol *7>
 			}"
@@ -805,7 +805,7 @@ if (import.meta.vitest) {
 	test(`symbol used as key twice`, () => {
 		const symbol = Symbol(`foo`)
 
-		expect(toDebugString({ a: { [symbol]: symbol }, b: { [symbol]: symbol } })).toMatchInlineSnapshot(`
+		expect(toJsodd({ a: { [symbol]: symbol }, b: { [symbol]: symbol } })).toMatchInlineSnapshot(`
 			"{
 				a: {
 					[Symbol("foo") *7]: <symbol *7>
@@ -818,7 +818,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`symbol getter`, () => {
-		expect(toDebugString({
+		expect(toJsodd({
 			get [Symbol.toStringTag]() {
 				return `Foo`
 			}
@@ -830,7 +830,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`unextensible`, () => {
-		expect(toDebugString(Object.preventExtensions({
+		expect(toJsodd(Object.preventExtensions({
 			foo: `bar`
 		}))).toMatchInlineSnapshot(`
 			"unextensible {
@@ -840,7 +840,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`sealed`, () => {
-		expect(toDebugString(Object.seal({
+		expect(toJsodd(Object.seal({
 			foo: `bar`
 		}))).toMatchInlineSnapshot(`
 			"sealed {
@@ -850,7 +850,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`frozen`, () => {
-		expect(toDebugString(Object.freeze({
+		expect(toJsodd(Object.freeze({
 			foo: `bar`
 		}))).toMatchInlineSnapshot(`
 			"frozen {
@@ -860,7 +860,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`only readonly`, () => {
-		expect(toDebugString(Object.defineProperties({}, {
+		expect(toJsodd(Object.defineProperties({}, {
 			foo: {
 				writable: false,
 				configurable: true,
@@ -875,15 +875,15 @@ if (import.meta.vitest) {
 	})
 
 	test(`empty object`, () => {
-		expect(toDebugString({})).toMatchInlineSnapshot(`"{}"`)
+		expect(toJsodd({})).toMatchInlineSnapshot(`"{}"`)
 	})
 
 	test(`arrow function`, () => {
-		expect(toDebugString(() => {})).toMatchInlineSnapshot(`"function ""(0) {}"`)
+		expect(toJsodd(() => {})).toMatchInlineSnapshot(`"function ""(0) {}"`)
 	})
 
 	test(`function expression`, () => {
-		expect(toDebugString(function () {})).toMatchInlineSnapshot(`
+		expect(toJsodd(function () {})).toMatchInlineSnapshot(`
 			"function ""(0) {
 				unconfigurable unenumerable prototype: {
 					unenumerable constructor: .
@@ -893,7 +893,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`generator function`, () => {
-		expect(toDebugString(function* () {})).toMatchInlineSnapshot(`
+		expect(toJsodd(function* () {})).toMatchInlineSnapshot(`
 			"function ""(0) {
 				unconfigurable unenumerable prototype: {
 					<prototype>: <GeneratorPrototype>
@@ -906,7 +906,7 @@ if (import.meta.vitest) {
 	test(`generator function and object`, () => {
 		function* generatorFunction() {}
 
-		expect(toDebugString({ generatorFunction, generatorObject: generatorFunction() })).toMatchInlineSnapshot(`
+		expect(toJsodd({ generatorFunction, generatorObject: generatorFunction() })).toMatchInlineSnapshot(`
 			"{
 				generatorFunction(0) {
 					unconfigurable unenumerable prototype: {
@@ -922,7 +922,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`regex`, () => {
-		expect(toDebugString(/ab+c/g)).toMatchInlineSnapshot(`
+		expect(toJsodd(/ab+c/g)).toMatchInlineSnapshot(`
 			"/ab+c/g {
 				unconfigurable unenumerable lastIndex: 0
 				<prototype>: RegExp.prototype
@@ -931,7 +931,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`fake regex`, () => {
-		expect(toDebugString(Object.create(RegExp.prototype, {
+		expect(toJsodd(Object.create(RegExp.prototype, {
 			lastIndex: { value: 0, writable: true }
 		}))).toMatchInlineSnapshot(`
 			"{
@@ -942,7 +942,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`map`, () => {
-		expect(toDebugString(new Map([ [ "foo", "bar" ] ]))).toMatchInlineSnapshot(`
+		expect(toJsodd(new Map([ [ "foo", "bar" ] ]))).toMatchInlineSnapshot(`
 			"Map {
 				<entry 0 key>: "foo"
 				<entry 0 value>: "bar"
@@ -951,7 +951,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`prototypeless map`, () => {
-		expect(toDebugString(Object.setPrototypeOf(new Map([ [ "foo", "bar" ] ]), null))).toMatchInlineSnapshot(`
+		expect(toJsodd(Object.setPrototypeOf(new Map([ [ "foo", "bar" ] ]), null))).toMatchInlineSnapshot(`
 			"Map {
 				<entry 0 key>: "foo"
 				<entry 0 value>: "bar"
@@ -961,7 +961,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`set`, () => {
-		expect(toDebugString(new Set([ `foo`, `bar`, `baz` ]))).toMatchInlineSnapshot(`
+		expect(toJsodd(new Set([ `foo`, `bar`, `baz` ]))).toMatchInlineSnapshot(`
 			"Set {
 				<entry 0>: "foo"
 				<entry 1>: "bar"
@@ -971,7 +971,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`array buffer`, () => {
-		expect(toDebugString(new Uint8Array([ 1, 2, 3 ]).buffer)).toMatchInlineSnapshot(`
+		expect(toJsodd(new Uint8Array([ 1, 2, 3 ]).buffer)).toMatchInlineSnapshot(`
 			"ArrayBuffer {
 				<byteLength>: 3
 				<content>: <01 02 03>
@@ -980,7 +980,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`byte array`, () => {
-		expect(toDebugString(new Uint8Array([ 1, 2, 3 ]))).toMatchInlineSnapshot(`
+		expect(toJsodd(new Uint8Array([ 1, 2, 3 ]))).toMatchInlineSnapshot(`
 			"Uint8Array [
 				0: 1
 				1: 2
@@ -997,7 +997,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`registry symbol as key`, () => {
-		expect(toDebugString({ [Symbol.for(`foo`)]: 0 })).toMatchInlineSnapshot(`
+		expect(toJsodd({ [Symbol.for(`foo`)]: 0 })).toMatchInlineSnapshot(`
 			"{
 				[Symbol.for("foo")]: 0
 			}"
@@ -1009,7 +1009,7 @@ if (import.meta.vitest) {
 		const b = Symbol(`b`)
 		const c = Symbol(`c`)
 
-		expect(toDebugString({
+		expect(toJsodd({
 			[a]: b,
 			[b]: c,
 			[c]: a
@@ -1027,7 +1027,7 @@ if (import.meta.vitest) {
 		const b = Symbol(`b`)
 		const c = Symbol(`c`)
 
-		expect(toDebugString({
+		expect(toJsodd({
 			foo: {
 				[a]: b,
 				[b]: c,
@@ -1047,7 +1047,7 @@ if (import.meta.vitest) {
 	test(`object nested in symbol keys`, () => {
 		const foo = {}
 
-		expect(toDebugString({
+		expect(toJsodd({
 			[Symbol.for(`foo`)]: { [Symbol.for(`bar`)]: foo },
 			[Symbol.for(`bar`)]: foo
 		})).toMatchInlineSnapshot(`
@@ -1061,7 +1061,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`array`, () => {
-		expect(toDebugString([ 1, 2, 3 ])).toMatchInlineSnapshot(`
+		expect(toJsodd([ 1, 2, 3 ])).toMatchInlineSnapshot(`
 			"[
 				0: 1
 				1: 2
@@ -1072,7 +1072,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`function with overriden name and length`, () => {
-		expect(toDebugString(Object.defineProperties(() => {}, {
+		expect(toJsodd(Object.defineProperties(() => {}, {
 			name: { get: () => {} },
 			length: { get: () => {} }
 		}))).toMatchInlineSnapshot(`
@@ -1084,7 +1084,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`sealed function`, () => {
-		expect(toDebugString(Object.seal(function foo() {}))).toMatchInlineSnapshot(`
+		expect(toJsodd(Object.seal(function foo() {}))).toMatchInlineSnapshot(`
 			"sealed function foo(0) {
 				unenumerable prototype: {
 					unenumerable constructor: .
@@ -1094,7 +1094,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`frozen function`, () => {
-		expect(toDebugString(Object.freeze(function foo() {}))).toMatchInlineSnapshot(`
+		expect(toJsodd(Object.freeze(function foo() {}))).toMatchInlineSnapshot(`
 			"frozen function foo(0) {
 				unenumerable prototype: {
 					unenumerable constructor: .
@@ -1104,7 +1104,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`referencing builtin symbol key getter`, () => {
-		expect(toDebugString(Reflect.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag))).toMatchInlineSnapshot(`
+		expect(toJsodd(Reflect.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag))).toMatchInlineSnapshot(`
 			"{
 				get: <TypedArray>.prototype.<get [Symbol.toStringTag]>
 				set: undefined
@@ -1117,7 +1117,7 @@ if (import.meta.vitest) {
 	test(`no clashing symbol numbers`, () => {
 		const s = Symbol(`foo`)
 
-		expect(toDebugString(
+		expect(toJsodd(
 			{
 				[Symbol("bar")]: s
 			},
@@ -1136,7 +1136,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`terse method`, () => {
-		expect(toDebugString({
+		expect(toJsodd({
 			foo() {}
 		})).toMatchInlineSnapshot(`
 			"{
@@ -1146,7 +1146,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`terse getter`, () => {
-		expect(toDebugString({
+		expect(toJsodd({
 			get foo() {
 				return 1
 			}
@@ -1158,13 +1158,13 @@ if (import.meta.vitest) {
 	})
 
 	test(`boolean objects`, () => {
-		expect(toDebugString(new Boolean(false))).toMatchInlineSnapshot(`
+		expect(toJsodd(new Boolean(false))).toMatchInlineSnapshot(`
 			"Boolean {
 				<primitive>: false
 			}"
 		`)
 
-		expect(toDebugString(new Boolean(true))).toMatchInlineSnapshot(`
+		expect(toJsodd(new Boolean(true))).toMatchInlineSnapshot(`
 			"Boolean {
 				<primitive>: true
 			}"
@@ -1172,7 +1172,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`extended boolean object`, () => {
-		expect(toDebugString(Object.assign(new Boolean(true), { foo: `bar` }))).toMatchInlineSnapshot(`
+		expect(toJsodd(Object.assign(new Boolean(true), { foo: `bar` }))).toMatchInlineSnapshot(`
 			"Boolean {
 				<primitive>: true
 				foo: "bar"
@@ -1181,7 +1181,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`number object`, () => {
-		expect(toDebugString(new Number(123))).toMatchInlineSnapshot(`
+		expect(toJsodd(new Number(123))).toMatchInlineSnapshot(`
 			"Number {
 				<primitive>: 123
 			}"
@@ -1189,7 +1189,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`string object`, () => {
-		expect(toDebugString(new String(`foo`))).toMatchInlineSnapshot(`
+		expect(toJsodd(new String(`foo`))).toMatchInlineSnapshot(`
 			"String {
 				<primitive>: "foo"
 			}"
@@ -1197,7 +1197,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`extended string object`, () => {
-		expect(toDebugString(Object.defineProperty(new String(`fo`), `2`, { value: `o`, enumerable: true }))).toMatchInlineSnapshot(`
+		expect(toJsodd(Object.defineProperty(new String(`fo`), `2`, { value: `o`, enumerable: true }))).toMatchInlineSnapshot(`
 			"String {
 				<primitive>: "fo"
 				unconfigurable readonly 2: "o"
@@ -1206,7 +1206,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`class`, () => {
-		expect(toDebugString(class Foo {
+		expect(toJsodd(class Foo {
 			bar() {}
 			get baz() { return 1 }
 			set baz(_) {}
@@ -1229,11 +1229,11 @@ if (import.meta.vitest) {
 	})
 
 	test(`weak set`, () => {
-		expect(toDebugString(new WeakSet([ {}, {}, {} ]))).toMatchInlineSnapshot(`"WeakSet {}"`)
+		expect(toJsodd(new WeakSet([ {}, {}, {} ]))).toMatchInlineSnapshot(`"WeakSet {}"`)
 	})
 
 	test(`weak map`, () => {
-		expect(toDebugString(new WeakMap([ [ {}, 1 ], [ {}, 2 ], [ {}, 3 ] ]))).toMatchInlineSnapshot(`"WeakMap {}"`)
+		expect(toJsodd(new WeakMap([ [ {}, 1 ], [ {}, 2 ], [ {}, 3 ] ]))).toMatchInlineSnapshot(`"WeakMap {}"`)
 	})
 
 	test(`shared array buffer`, () => {
@@ -1241,7 +1241,7 @@ if (import.meta.vitest) {
 
 		bytes.set([ 1, 2, 3 ])
 
-		expect(toDebugString(bytes.buffer)).toMatchInlineSnapshot(`
+		expect(toJsodd(bytes.buffer)).toMatchInlineSnapshot(`
 			"SharedArrayBuffer {
 				<byteLength>: 3
 				<content>: <01 02 03>
@@ -1250,7 +1250,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`data view`, () => {
-		expect(toDebugString(new DataView(new Uint8Array([ 1, 2, 3 ]).buffer))).toMatchInlineSnapshot(`
+		expect(toJsodd(new DataView(new Uint8Array([ 1, 2, 3 ]).buffer))).toMatchInlineSnapshot(`
 			"DataView {
 				<buffer>: ArrayBuffer {
 					<byteLength>: 3
@@ -1263,21 +1263,21 @@ if (import.meta.vitest) {
 	})
 
 	test(`weak ref`, () => {
-		expect(toDebugString(new WeakRef({}))).toMatchInlineSnapshot(`
+		expect(toJsodd(new WeakRef({}))).toMatchInlineSnapshot(`
 			"WeakRef {}"
 		`)
 	})
 
 	if (JSON.rawJSON) {
 		test(`raw json`, () => {
-			expect(toDebugString(JSON.rawJSON!("10000000000000001"))).toMatchInlineSnapshot(`
+			expect(toJsodd(JSON.rawJSON!("10000000000000001"))).toMatchInlineSnapshot(`
 				"RawJSON "10000000000000001""
 			`)
 		})
 	}
 
 	test(`symbol object`, () => {
-		expect(toDebugString(Object(Symbol("foo")))).toMatchInlineSnapshot(`
+		expect(toJsodd(Object(Symbol("foo")))).toMatchInlineSnapshot(`
 			"Symbol {
 				<primitive>: Symbol("foo")
 			}"
@@ -1285,7 +1285,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`multiline string`, () => {
-		expect(toDebugString({ foo: `bar\nbaz\nqux` })).toMatchInlineSnapshot(`
+		expect(toJsodd({ foo: `bar\nbaz\nqux` })).toMatchInlineSnapshot(`
 			"{
 				foo: 
 					"bar\\n"
