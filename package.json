@@ -1,14 +1,26 @@
 {
 	"name": "jsodd",
 	"version": "0.0.0",
-	"description": "Format any value to a debug string.",
+	"description": "Capture JavaScript values as a string in excruciating detail.",
 	"exports": {
 		".": "./default.js"
 	},
-	"keywords": [],
-	"author": "Samual Norman",
+	"keywords": [
+		"jsodd",
+		"javascript",
+		"object",
+		"descriptor",
+		"definition"
+	],
+	"author": "Samual Norman <me@samual.uk> (https://samual.uk/)",
 	"license": "MIT",
 	"type": "module",
+	"homepage": "https://github.com/samualtnorman/jsodd#readme",
+	"bugs": {
+		"url": "https://github.com/samualtnorman/jsodd/issues",
+		"email": "me@samual.uk"
+	},
+	"repository": "github:samualtnorman/jsodd",
 	"dependencies": {
 		"@samual/types": "0.0.2-23ffc7f"
 	},
@@ -21,5 +33,10 @@
 		"rolldown": "1.0.0-beta.53",
 		"typescript": "^5.9.3",
 		"vitest": "^4.0.15"
-	}
+	},
+	"engines": {
+		"node": "^20.10 || ^22 || >=24",
+		"pnpm": "^10"
+	},
+	"private": true
 }
