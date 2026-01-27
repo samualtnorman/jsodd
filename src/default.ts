@@ -326,6 +326,28 @@ type ToDebugStringOptions = LaxPartial<{
 	valueName: string
 }>
 
+type ToJsoddStringOptions = LaxPartial<{
+	indentLevel: number
+	indentString: string
+}>
+
+const id = <T>(value: T) => value
+
+const MULTILINE_STRING_STYLE = id<`Zig` | `C`>(`C`)
+
+const toJsoddString = (string: string, { indentLevel = 0, indentString = `\t` }: ToJsoddStringOptions = {}): string => {
+	const indent = () => indentString.repeat(indentLevel)
+
+	if (string.includes(`\n`)) {
+		if (MULTILINE_STRING_STYLE == `Zig`)
+			return `\n${indent()}\\\\${string.replaceAll(`\n`, `\n${indent()}\\\\`)}`
+		else
+			return `\n${indent()}${string.split(`\n`).map(line => JSON.stringify(line).slice(0, -1)).join(`\\n"\n${indent()}`)}`
+	}
+
+	return JSON.stringify(string)
+}
+
 export const toDebugString = (value: unknown, {
 	indentLevel = 0,
 	indentString = `\t`,
@@ -342,7 +364,7 @@ export const toDebugString = (value: unknown, {
 		if (typeof value == `bigint`)
 			o += `${value}n`
 		else if (typeof value == `string`)
-			o += JSON.stringify(value)
+			o += toJsoddString(value, { indentLevel: indentLevel + 1, indentString })
 		else if (typeof value == `symbol`)
 			o += symbolToDebugString(value, friendlyNames.map, valueName)
 		else if (JSON.isRawJSON?.(value)) {
@@ -591,7 +613,7 @@ export const toDebugString = (value: unknown, {
 				}
 
 				if (stack != undefined)
-					o += `\n${indent()}<stack>: ${JSON.stringify(stack)}`
+					o += `\n${indent()}<stack>: ${toJsoddString(stack, { indentLevel: indentLevel + 1, indentString })}`
 
 				if (arrayBufferByteLength != undefined) {
 					o += `\n${indent()}<byteLength>: ${arrayBufferByteLength}\n${indent()}<content>: <${
@@ -1258,6 +1280,17 @@ if (import.meta.vitest) {
 		expect(toDebugString(Object(Symbol("foo")))).toMatchInlineSnapshot(`
 			"Symbol {
 				<primitive>: Symbol("foo")
+			}"
+		`)
+	})
+
+	test(`multiline string`, () => {
+		expect(toDebugString({ foo: `bar\nbaz\nqux` })).toMatchInlineSnapshot(`
+			"{
+				foo: 
+					"bar\\n"
+					"baz\\n"
+					"qux
 			}"
 		`)
 	})
