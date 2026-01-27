@@ -30,6 +30,7 @@
 		"@samual/rolldown-config": "jsr:0.0.1-5e79465",
 		"@total-typescript/ts-reset": "^0.6.1",
 		"babel-plugin-here": "^1.0.2",
+		"eta": "^4.5.0",
 		"rolldown": "1.0.0-beta.53",
 		"typescript": "^5.9.3",
 		"vitest": "^4.0.15"
