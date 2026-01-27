@@ -352,7 +352,7 @@ export const toDebugString = (value: unknown, {
 	indentLevel = 0,
 	indentString = `\t`,
 	friendlyNames = cloneFriendlyNames(builtinFriendlyNames),
-	valueName = ``,
+	valueName = ``
 }: ToDebugStringOptions = {}): string => {
 	let o = ``
 
@@ -577,7 +577,7 @@ export const toDebugString = (value: unknown, {
 							stringify(value, name, isTerseMethod)
 						}
 
-						if ("value" in descriptor) {
+						if (`value` in descriptor) {
 							o += `${prefix}${keyString}`
 							stringifyKeyAndValue(descriptor.value, expectedFunctionName, `${valueName}${valueName && valueName != `.` && keyName[0] == `[` ? `` : `.`}${keyName}`)
 						} else {
