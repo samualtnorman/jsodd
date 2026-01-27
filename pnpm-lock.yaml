@@ -38,6 +38,9 @@ importers:
       rolldown:
         specifier: 1.0.0-beta.53
         version: 1.0.0-beta.53
+      semver:
+        specifier: ^7.7.3
+        version: 7.7.3
       typescript:
         specifier: ^5.9.3
         version: 5.9.3(patch_hash=70a362dfbe63367e14aeb2fa5a7cfd0eae2f0c667ec8c3018b66dfb1f746bfa7)
@@ -1307,6 +1310,11 @@ packages:
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
+    hasBin: true
+
+  semver@7.7.3:
+    resolution: {integrity: sha512-SdsKMrI9TdgjdweUSR9MweHA4EJ8YxHn8DFaDisvhVlUOe4BF1tLD7GAj0lIqWVl+dPb/rExr0Btby5loQm20Q==}
+    engines: {node: '>=10'}
     hasBin: true
 
   serialize-javascript@6.0.2:
@@ -2802,6 +2810,8 @@ snapshots:
   safe-buffer@5.2.1: {}
 
   semver@6.3.1: {}
+
+  semver@7.7.3: {}
 
   serialize-javascript@6.0.2:
     dependencies:
