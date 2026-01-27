@@ -342,7 +342,7 @@ const stringToJsodd = (string: string, { indentLevel = 0, indentString = `\t` }:
 		if (MULTILINE_STRING_STYLE == `Zig`)
 			return `\n${indent()}\\\\${string.replaceAll(`\n`, `\n${indent()}\\\\`)}`
 		else
-			return `\n${indent()}${string.split(`\n`).map(line => JSON.stringify(line).slice(0, -1)).join(`\\n"\n${indent()}`)}`
+			return `\n${indent()}${string.split(`\n`).map(line => JSON.stringify(line).slice(0, -1)).join(`\\n"\n${indent()}`)}"`
 	}
 
 	return JSON.stringify(string)
@@ -1290,7 +1290,7 @@ if (import.meta.vitest) {
 				foo: 
 					"bar\\n"
 					"baz\\n"
-					"qux
+					"qux"
 			}"
 		`)
 	})
