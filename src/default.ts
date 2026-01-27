@@ -326,7 +326,7 @@ type ToJsoddOptions = LaxPartial<{
 	valueName: string
 }>
 
-type ToJsoddStringOptions = LaxPartial<{
+type StringToJsoddOptions = LaxPartial<{
 	indentLevel: number
 	indentString: string
 }>
@@ -335,7 +335,7 @@ const id = <T>(value: T) => value
 
 const MULTILINE_STRING_STYLE = id<`Zig` | `C`>(`C`)
 
-const toJsoddString = (string: string, { indentLevel = 0, indentString = `\t` }: ToJsoddStringOptions = {}): string => {
+const stringToJsodd = (string: string, { indentLevel = 0, indentString = `\t` }: StringToJsoddOptions = {}): string => {
 	const indent = () => indentString.repeat(indentLevel)
 
 	if (string.includes(`\n`)) {
@@ -364,7 +364,7 @@ export const toJsodd = (value: unknown, {
 		if (typeof value == `bigint`)
 			o += `${value}n`
 		else if (typeof value == `string`)
-			o += toJsoddString(value, { indentLevel: indentLevel + 1, indentString })
+			o += stringToJsodd(value, { indentLevel: indentLevel + 1, indentString })
 		else if (typeof value == `symbol`)
 			o += symbolToJsodd(value, friendlyNames.map, valueName)
 		else if (JSON.isRawJSON?.(value)) {
@@ -613,7 +613,7 @@ export const toJsodd = (value: unknown, {
 				}
 
 				if (stack != undefined)
-					o += `\n${indent()}<stack>: ${toJsoddString(stack, { indentLevel: indentLevel + 1, indentString })}`
+					o += `\n${indent()}<stack>: ${stringToJsodd(stack, { indentLevel: indentLevel + 1, indentString })}`
 
 				if (arrayBufferByteLength != undefined) {
 					o += `\n${indent()}<byteLength>: ${arrayBufferByteLength}\n${indent()}<content>: <${
