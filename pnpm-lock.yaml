@@ -14,8 +14,8 @@ importers:
   .:
     dependencies:
       '@samual/types':
-        specifier: jsr:0.0.2-e3377b5
-        version: '@jsr/samual__types@0.0.2-e3377b5'
+        specifier: 0.0.2-23ffc7f
+        version: 0.0.2-23ffc7f
     devDependencies:
       '@babel/plugin-syntax-typescript':
         specifier: ^7.27.1
@@ -746,9 +746,6 @@ packages:
   '@jsr/samual__rolldown-config@0.0.1-5e79465':
     resolution: {integrity: sha512-VezTHciB/JmF2kPEz0gRze2tSY+xgQV2p7LPQzWiiDwMmD9wn455AiFu5cIo0k4XNEsRpmJ0e6Jq0gdQV+VXOw==, tarball: https://npm.jsr.io/~/11/@jsr/samual__rolldown-config/0.0.1-5e79465.tgz}
 
-  '@jsr/samual__types@0.0.2-e3377b5':
-    resolution: {integrity: sha512-QysV/D82By4JQJC7CNKSJxtWYVmx0W+vEhsWoWY7oA9dbKM0plzRD0I/RS3MVy8nxvt7flQMjRcJTdtukB+uzg==, tarball: https://npm.jsr.io/~/11/@jsr/samual__types/0.0.2-e3377b5.tgz}
-
   '@napi-rs/wasm-runtime@1.1.0':
     resolution: {integrity: sha512-Fq6DJW+Bb5jaWE69/qOE0D1TUN9+6uWhCeZpdnSBk14pjLcCWR7Q8n49PTSPHazM37JqrsdpEthXy2xn6jWWiA==}
 
@@ -983,6 +980,10 @@ packages:
   '@samual/lib@0.13.1-5f3d742':
     resolution: {integrity: sha512-bncLPtRBTnpi2ktNlVHwMix+SO2EcrTQHfIWVzEJ9Bm1JD/QX5rhaD4D4vleeM57sOJMXToRfgKX6NXUTT3JQA==}
     engines: {node: ^18.20 || ^20.10 || >=22}
+
+  '@samual/types@0.0.2-23ffc7f':
+    resolution: {integrity: sha512-6vqdhFUB2mcW+E2S+OdLLXuBZeg7+GL6ocAq4XqD7OiTG24MOnvFpiTDk2XxkBgAYHmVqfX/tABfgYAros1a3w==}
+    engines: {node: ^20.10 || >=22}
 
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
@@ -2290,8 +2291,6 @@ snapshots:
       - rollup
       - supports-color
 
-  '@jsr/samual__types@0.0.2-e3377b5': {}
-
   '@napi-rs/wasm-runtime@1.1.0':
     dependencies:
       '@emnapi/core': 1.7.1
@@ -2439,6 +2438,8 @@ snapshots:
   '@samual/lib@0.13.0': {}
 
   '@samual/lib@0.13.1-5f3d742': {}
+
+  '@samual/types@0.0.2-23ffc7f': {}
 
   '@standard-schema/spec@1.0.0': {}
 
