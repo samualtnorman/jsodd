@@ -7,7 +7,7 @@ import { getExports } from "./lib/exports.js"
 	"@samual/types": "@samual/types"
 }
 
-const { name, version, license, dependencies } = packageJson
+const { version, license, dependencies } = packageJson
 
 makeDirectorySync("dist", { recursive: true })
 
@@ -17,5 +17,5 @@ const imports = Object.fromEntries(Object.entries(dependencies).map(
 
 writeFileSync(
 	"dist/jsr.json",
-	JSON.stringify({ name, version, license, exports: await getExports(`.d.ts`, `.js`), imports }, undefined, "\t")
+	JSON.stringify({ name: `@sn/jsodd`, version, license, exports: await getExports(`.d.ts`, `.js`), imports }, undefined, "\t")
 )
