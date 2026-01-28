@@ -311,6 +311,10 @@ const builtinFriendlyNames = mapFriendlyNames({
 		"<AsyncFunction>": AsyncFunction,
 		...typeof AsyncDisposableStack != `undefined` ? { AsyncDisposableStack } : undefined,
 
+		// Reflection
+		Reflect,
+		Proxy,
+
 		// Internationalization
 		Intl,
 
@@ -341,6 +345,8 @@ const builtinFriendlyNames = mapFriendlyNames({
 	...v8ErrorStackDescriptor?.get && { "<V8ErrorStackGetter>": v8ErrorStackDescriptor.get },
 	...v8ErrorStackDescriptor?.set && { "<V8ErrorStackSetter>": v8ErrorStackDescriptor.set }
 })
+
+builtinFriendlyNames.map.set(globalThis, `globalThis`)
 
 type ToJsoddOptions = LaxPartial<{
 	indentLevel: number
