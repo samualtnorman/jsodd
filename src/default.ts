@@ -316,7 +316,9 @@ const builtinFriendlyNames = mapFriendlyNames({
 	EventTarget,
 	Event,
 	...v8ErrorStackDescriptor?.get && { "<V8ErrorStackGetter>": v8ErrorStackDescriptor.get },
-	...v8ErrorStackDescriptor?.set && { "<V8ErrorStackSetter>": v8ErrorStackDescriptor.set }
+	...v8ErrorStackDescriptor?.set && { "<V8ErrorStackSetter>": v8ErrorStackDescriptor.set },
+
+	Blob
 })
 
 type ToJsoddOptions = LaxPartial<{
