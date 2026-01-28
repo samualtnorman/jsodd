@@ -227,77 +227,106 @@ declare const InternalError: object
 declare const Temporal: object
 
 const builtinFriendlyNames = mapFriendlyNames({
-	Function,
-	Object,
-	Boolean,
-	Symbol,
+	// Standard built-in objects (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects)
+		// Fundamental objects
+		Function,
+		Object,
+		Boolean,
+		Symbol,
 
-	Error,
-	AggregateError,
-	EvalError,
-	RangeError,
-	ReferenceError,
-	...typeof SuppressedError != `undefined` ? { SuppressedError } : undefined,
-	SyntaxError,
-	TypeError,
-	URIError,
-	...typeof InternalError != `undefined` && { InternalError },
+		// Error objects
+		Error,
+		AggregateError,
+		EvalError,
+		RangeError,
+		ReferenceError,
+		...typeof SuppressedError != `undefined` ? { SuppressedError } : undefined,
+		SyntaxError,
+		TypeError,
+		URIError,
+		...typeof InternalError != `undefined` && { InternalError },
 
-	Number,
-	BigInt,
-	Math,
-	Date,
-	...typeof Temporal != `undefined` && { Temporal },
+		// Numbers and dates
+		Number,
+		BigInt,
+		Math,
+		Date,
+		...typeof Temporal != `undefined` && { Temporal },
 
-	String,
-	RegExp,
+		// Text processing
+		String,
+		RegExp,
 
-	Array,
-	"<TypedArray>": TypedArray,
-	Int8Array,
-	Uint8Array,
-	Uint8ClampedArray,
-	Int16Array,
-	Uint16Array,
-	Int32Array,
-	Uint32Array,
-	BigInt64Array,
-	BigUint64Array,
-	...typeof Float16Array != `undefined` ? { Float16Array } : undefined,
-	Float32Array,
-	Float64Array,
+		// Indexed collections
+		Array,
+		"<TypedArray>": TypedArray,
+		Int8Array,
+		Uint8Array,
+		Uint8ClampedArray,
+		Int16Array,
+		Uint16Array,
+		Int32Array,
+		Uint32Array,
+		BigInt64Array,
+		BigUint64Array,
+		...typeof Float16Array != `undefined` ? { Float16Array } : undefined,
+		Float32Array,
+		Float64Array,
 
-	Map,
-	Set,
-	WeakMap,
-	WeakSet,
+		// Keyed collections
+		Map,
+		Set,
+		WeakMap,
+		WeakSet,
 
-	ArrayBuffer,
-	...typeof SharedArrayBuffer != `undefined` ? { SharedArrayBuffer } : undefined,
-	DataView,
-	Atomics,
-	JSON,
+		// Structured data
+		ArrayBuffer,
+		...typeof SharedArrayBuffer != `undefined` ? { SharedArrayBuffer } : undefined,
+		DataView,
+		Atomics,
+		JSON,
 
-	WeakRef,
-	FinalizationRegistry,
+		// Managing memory
+		WeakRef,
+		FinalizationRegistry,
 
-	eval,
-	isFinite,
-	isNaN,
-	parseFloat,
-	parseInt,
-	decodeURI,
-	decodeURIComponent,
-	encodeURI,
-	encodeURIComponent,
-	...typeof escape != `undefined` && { escape },
-	...typeof unescape != `undefined` && { unescape },
+		// Function properties
+		eval,
+		isFinite,
+		isNaN,
+		parseFloat,
+		parseInt,
+		decodeURI,
+		decodeURIComponent,
+		encodeURI,
+		encodeURIComponent,
+		...typeof escape != `undefined` && { escape },
+		...typeof unescape != `undefined` && { unescape },
 
-	...typeof AsyncDisposableStack != `undefined` ? { AsyncDisposableStack } : undefined,
-	"<AsyncFunction>": AsyncFunction,
-	"<AsyncGenerator>": AsyncGenerator,
-	...typeof Iterator != `undefined` ? { Iterator } : undefined,
-	"<GeneratorFunction>": GeneratorFunction,
+		// Control abstraction objects
+		...typeof Iterator != `undefined` ? { Iterator } : undefined,
+		Promise,
+		"<GeneratorFunction>": GeneratorFunction,
+		"<AsyncGenerator>": AsyncGenerator,
+		"<AsyncFunction>": AsyncFunction,
+		...typeof AsyncDisposableStack != `undefined` ? { AsyncDisposableStack } : undefined,
+
+		// Internationalization
+		Intl,
+
+	// Document Object Model (DOM) (https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model)
+	DOMException,
+	Event,
+	EventTarget,
+
+	// File API (https://developer.mozilla.org/en-US/docs/Web/API/File_API)
+	Blob,
+	File,
+	...typeof FileList != `undefined` && { FileList },
+	...typeof FileReader != `undefined` && { FileReader },
+	...typeof FileReaderSync != `undefined` && { FileReaderSync },
+
+	// Unsorted
 	"<GeneratorPrototype>": GeneratorPrototype,
 	"<ArrayIteratorPrototype>": ArrayIteratorPrototype,
 	"<StringIteratorPrototype>": StringIteratorPrototype,
@@ -309,21 +338,8 @@ const builtinFriendlyNames = mapFriendlyNames({
 	"<SegmentsIteratorPrototype>": SegmentsIteratorPrototype,
 	...WrapForValidIteratorPrototype && { "<WrapForValidIteratorPrototype>": WrapForValidIteratorPrototype },
 
-	Intl,
-	Promise,
-
-	DOMException,
-	EventTarget,
-	Event,
 	...v8ErrorStackDescriptor?.get && { "<V8ErrorStackGetter>": v8ErrorStackDescriptor.get },
-	...v8ErrorStackDescriptor?.set && { "<V8ErrorStackSetter>": v8ErrorStackDescriptor.set },
-
-	// File API (https://developer.mozilla.org/en-US/docs/Web/API/File_API)
-	Blob,
-	File,
-	...typeof FileList != `undefined` && { FileList },
-	...typeof FileReader != `undefined` && { FileReader },
-	...typeof FileReaderSync != `undefined` && { FileReaderSync }
+	...v8ErrorStackDescriptor?.set && { "<V8ErrorStackSetter>": v8ErrorStackDescriptor.set }
 })
 
 type ToJsoddOptions = LaxPartial<{
