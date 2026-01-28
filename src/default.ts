@@ -318,7 +318,12 @@ const builtinFriendlyNames = mapFriendlyNames({
 	...v8ErrorStackDescriptor?.get && { "<V8ErrorStackGetter>": v8ErrorStackDescriptor.get },
 	...v8ErrorStackDescriptor?.set && { "<V8ErrorStackSetter>": v8ErrorStackDescriptor.set },
 
-	Blob
+	// File API (https://developer.mozilla.org/en-US/docs/Web/API/File_API)
+	Blob,
+	File,
+	...typeof FileList != `undefined` && { FileList },
+	...typeof FileReader != `undefined` && { FileReader },
+	...typeof FileReaderSync != `undefined` && { FileReaderSync }
 })
 
 type ToJsoddOptions = LaxPartial<{
