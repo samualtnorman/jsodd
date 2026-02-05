@@ -74,6 +74,33 @@ const typedArrayByteOffsetGetter = Reflect.getOwnPropertyDescriptor(TypedArray.p
 const typedArrayLengthGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "length").get!
 const typedArrayTagGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag).get!
 
+const emptyBlob: any = new Blob
+const nodeBlobSymbolKeys = Object.getOwnPropertySymbols(emptyBlob)
+const NodeBlobKHandle = nodeBlobSymbolKeys.find(symbol => symbol.description == `kHandle`)
+const NodeBlobKLength = nodeBlobSymbolKeys.find(symbol => symbol.description == `kLength`)
+const NodeBlobKType = nodeBlobSymbolKeys.find(symbol => symbol.description == `kType`)
+const NodeInternalBlob = NodeBlobKHandle && emptyBlob[NodeBlobKHandle].constructor
+const blobTypeGetter = Reflect.getOwnPropertyDescriptor(Blob.prototype, `type`).get!
+const blobSizeGetter = Reflect.getOwnPropertyDescriptor(Blob.prototype, `size`).get!
+const emptyFile: any = new File([], ``)
+const NodeFileKState = Object.getOwnPropertySymbols(emptyFile).find(symbol => symbol.description == `state`)
+const NodeFileState = NodeFileKState && emptyFile[NodeFileKState].constructor
+const fileNameGetter = Reflect.getOwnPropertyDescriptor(File.prototype, `name`).get!
+const fileLastModifiedGetter = Reflect.getOwnPropertyDescriptor(File.prototype, `lastModified`).get!
+const fileWebkitRelativePath = Reflect.getOwnPropertyDescriptor(File.prototype, `webkitRelativePath`)?.get
+
+const getBlobAttributes = (value: unknown): { size: number, type: string } | undefined =>
+	tryCatch(() => ({ size: blobSizeGetter.call(value), type: blobTypeGetter.call(value) }))
+
+const getFileAttributes = (value: unknown): { size: number, type: string, lastModified: number, name: string, webkitRelativePath?: string } | undefined =>
+	tryCatch(() => ({
+		size: blobSizeGetter.call(value),
+		type: blobTypeGetter.call(value),
+		lastModified: fileLastModifiedGetter.call(value),
+		name: fileNameGetter.call(value),
+		...fileWebkitRelativePath && { webkitRelativePath: fileWebkitRelativePath.call(value) }
+	}))
+
 const getTypedArrayAttributes = (value: unknown):
 	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, tag: string } | undefined =>
 	tryCatch(() => ({
@@ -336,7 +363,14 @@ const builtinFriendlyNames = mapFriendlyNames({
 	...WrapForValidIteratorPrototype && { "<WrapForValidIteratorPrototype>": WrapForValidIteratorPrototype },
 
 	...v8ErrorStackDescriptor?.get && { "<V8ErrorStackGetter>": v8ErrorStackDescriptor.get },
-	...v8ErrorStackDescriptor?.set && { "<V8ErrorStackSetter>": v8ErrorStackDescriptor.set }
+	...v8ErrorStackDescriptor?.set && { "<V8ErrorStackSetter>": v8ErrorStackDescriptor.set },
+
+	...NodeBlobKHandle && { "<NodeBlobKHandle>": NodeBlobKHandle },
+	...NodeBlobKLength && { "<NodeBlobKLength>": NodeBlobKLength },
+	...NodeBlobKType && { "<NodeBlobKType>": NodeBlobKType },
+	...NodeInternalBlob && { "<NodeInternalBlob>": NodeInternalBlob },
+	...NodeFileKState && { "<NodeFileKState>": NodeFileKState },
+	...NodeFileState && { "<NodeFileState>": NodeFileState }
 })
 
 builtinFriendlyNames.map.set(globalThis, `globalThis`)
@@ -523,6 +557,23 @@ export const toJsodd = (value: unknown, {
 				if (domExceptionAttributes)
 					o += `DOMException `
 
+				const dateTime = tryCatch(() => Date.prototype.getTime.call(value))
+
+				if (dateTime != undefined)
+					o += `Date `
+
+				const fileAttributes = getFileAttributes(value)
+				let blobAttributes
+
+				if (fileAttributes)
+					o += `File `
+				else {
+					blobAttributes = getBlobAttributes(value)
+
+					if (blobAttributes)
+						o += `Blob `
+				}
+
 				const isArray = Array.isArray(value) || typedArrayAttributes
 
 				o += isArray ? `[` : `{`
@@ -670,6 +721,26 @@ export const toJsodd = (value: unknown, {
 						o += `\n${indent()}<code>: ${JSON.stringify(code)}`
 				}
 
+				const stringifyField = (key: string, value: string | number): void => {
+					o += `\n${indent()}${key}: ${JSON.stringify(value)}`
+				}
+
+				if (dateTime != undefined)
+					stringifyField(`<time>`, dateTime)
+
+				if (fileAttributes) {
+					stringifyField(`<size>`, fileAttributes.size)
+					stringifyField(`<type>`, fileAttributes.type)
+					stringifyField(`<lastModified>`, fileAttributes.lastModified)
+					stringifyField(`<name>`, fileAttributes.name)
+
+					if (fileAttributes.webkitRelativePath != undefined)
+						stringifyField(`<webkitRelativePath>`, fileAttributes.webkitRelativePath)
+				} else if (blobAttributes) {
+					stringifyField(`<size>`, blobAttributes.size)
+					stringifyField(`<type>`, blobAttributes.type)
+				}
+
 				const prototype = Reflect.getPrototypeOf(value)
 
 				const expectedPrototype =
@@ -722,6 +793,12 @@ export const toJsodd = (value: unknown, {
 						Symbol.prototype
 					: domExceptionAttributes ?
 						DOMException.prototype
+					: dateTime != undefined ?
+						Date.prototype
+					: fileAttributes ?
+						File.prototype
+					: blobAttributes ?
+						Blob.prototype
 					: Object.prototype
 
 				if (prototype != expectedPrototype) {
@@ -736,7 +813,8 @@ export const toJsodd = (value: unknown, {
 					setValues?.length || arrayBufferByteLength != undefined ||
 					sharedArrayBufferByteLength != undefined || typedArrayAttributes ||
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
-					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue || domExceptionAttributes
+					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue ||
+					domExceptionAttributes || dateTime != undefined || blobAttributes
 				)
 					o += `\n${indent()}`
 
@@ -1309,10 +1387,72 @@ if (import.meta.vitest) {
 	test(`multiline string`, () => {
 		expect(toJsodd({ foo: `bar\nbaz\nqux` })).toMatchInlineSnapshot(`
 			"{
-				foo: 
+				foo:
 					"bar\\n"
 					"baz\\n"
 					"qux"
+			}"
+		`)
+	})
+
+	test(`date`, () => {
+		expect(toJsodd(new Date(1770292742963))).toMatchInlineSnapshot(`
+			"Date {
+				<time>: 1770292742963
+			}"
+		`)
+	})
+
+	test(`date with different prototype`, () => {
+		const date = new Date(1770293653474)
+
+		Reflect.setPrototypeOf(date, Object.prototype)
+
+		expect(toJsodd(date)).toMatchInlineSnapshot(`
+			"Date {
+				<time>: 1770293653474
+				<prototype>: Object.prototype
+			}"
+		`)
+	})
+
+	test(`blob`, () => {
+		expect(
+			toJsodd(new Blob([ `foo` ], { type: `text/plain`, endings: `native` }))
+		).toMatchInlineSnapshot(`
+			"Blob {
+				[<NodeBlobKHandle>]: {
+					<prototype>: <NodeInternalBlob>.prototype
+				}
+				[<NodeBlobKLength>]: 3
+				[<NodeBlobKType>]: "text/plain"
+				<size>: 3
+				<type>: "text/plain"
+			}"
+		`)
+	})
+
+	test(`file`, () => {
+		expect(toJsodd(new File(
+			[ `hello world` ],
+			`hi.txt`,
+			{ endings: `transparent`, lastModified: 1770302972135, type: `text/plain` }
+		))).toMatchInlineSnapshot(`
+			"File {
+				[<NodeBlobKHandle>]: {
+					<prototype>: <NodeInternalBlob>.prototype
+				}
+				[<NodeBlobKLength>]: 11
+				[<NodeBlobKType>]: "text/plain"
+				[<NodeFileKState>]: {
+					name: "hi.txt"
+					lastModified: 1770302972135
+					<prototype>: <NodeFileState>.prototype
+				}
+				<size>: 11
+				<type>: "text/plain"
+				<lastModified>: 1770302972135
+				<name>: "hi.txt"
 			}"
 		`)
 	})
