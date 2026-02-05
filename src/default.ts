@@ -147,8 +147,14 @@ export const mapFriendlyNames = (values: Record<string, object | symbol>): Frien
 		return `[${name}]`
 	}
 
-	const queue: { name: string, value: object }[] =
-		Object.entries(values).map(([ name, value ]) => (names.set(value, name), { name, value })).filter(Boolean)
+	const queue: { name: string, value: object }[] = Object.entries(values)
+		.map(([ name, value ]) => {
+			names.set(value, name)
+
+			if (typeof value != `symbol`)
+				return { name, value }
+		})
+		.filter(Boolean)
 
 	while (queue.length) {
 		const item = queue.shift()!
