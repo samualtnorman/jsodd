@@ -1,4 +1,5 @@
 import type { LaxPartial } from "@samual/types"
+import { tryCatch } from "@samual/try"
 
 const WellKnownSymbols = new Map([
 	[ Symbol.isConcatSpreadable, `Symbol.isConcatSpreadable` ],
@@ -17,20 +18,6 @@ const WellKnownSymbols = new Map([
 	[ Symbol.dispose, `Symbol.dispose` ],
 	[ Symbol.asyncDispose, `Symbol.asyncDispose` ]
 ])
-
-const tryCatch: {
-	<T>(executor: () => T): T | undefined
-	<TExecutorReturn, TOnErrorReturn>(
-		executor: () => TExecutorReturn,
-		onError: (error: unknown) => TOnErrorReturn
-	): TExecutorReturn | TOnErrorReturn
-} = (executor: () => unknown, onError?: (error: any) => unknown) => {
-	try {
-		return executor()
-	} catch (error) {
-		return onError?.(error)
-	}
-}
 
 const isObject = (value: unknown): value is object =>
 	(!!value && typeof value == `object`) || typeof value == `function`

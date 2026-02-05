@@ -22,6 +22,7 @@
 	},
 	"repository": "github:samualtnorman/jsodd",
 	"dependencies": {
+		"@samual/try": "0.0.1-184020f",
 		"@samual/types": "0.0.2-23ffc7f"
 	},
 	"devDependencies": {

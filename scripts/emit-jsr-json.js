@@ -4,7 +4,8 @@ import packageJson from "../package.json" with { type: "json" }
 import { getExports } from "./lib/exports.js"
 
 /** @type {Record<string, string>} */ const ConvertToJsr = {
-	"@samual/types": "@samual/types"
+	"@samual/types": "@samual/types",
+	"@samual/try": "@sn/try"
 }
 
 const { version, license, dependencies } = packageJson
