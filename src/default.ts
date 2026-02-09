@@ -350,6 +350,15 @@ const builtinFriendlyNames = mapFriendlyNames({
 	...typeof FileReader != `undefined` && { FileReader },
 	...typeof FileReaderSync != `undefined` && { FileReaderSync },
 
+	// Fetch API (https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
+	fetch,
+	...typeof fetchLater != `undefined` && { fetchLater },
+	...typeof DeferredRequestInit != `undefined` && { DeferredRequestInit },
+	...typeof FetchLaterResult != `undefined` && { FetchLaterResult },
+	Headers,
+	Request,
+	Response,
+
 	// Unsorted
 	"<GeneratorPrototype>": GeneratorPrototype,
 	"<ArrayIteratorPrototype>": ArrayIteratorPrototype,
@@ -574,6 +583,11 @@ export const toJsodd = (value: unknown, {
 						o += `Blob `
 				}
 
+				const headersEntries = tryCatch(() => Headers.prototype.entries.call(value))
+
+				if (headersEntries)
+					o += `Headers `
+
 				const isArray = Array.isArray(value) || typedArrayAttributes
 
 				o += isArray ? `[` : `{`
@@ -741,6 +755,15 @@ export const toJsodd = (value: unknown, {
 					stringifyField(`<type>`, blobAttributes.type)
 				}
 
+				if (headersEntries) {
+					for (const [ index, key, value ] of headersEntries.map(([ key, value ], index) => [ index, key, value ])) {
+						o += `\n${indent()}<entry ${index} key>: `
+						stringify(key, `${valueName}.<entry ${index} key>`)
+						o += `\n${indent()}<entry ${index} value>: `
+						stringify(value, `${valueName}.<entry ${index} value>`)
+					}
+				}
+
 				const prototype = Reflect.getPrototypeOf(value)
 
 				const expectedPrototype =
@@ -799,6 +822,8 @@ export const toJsodd = (value: unknown, {
 						File.prototype
 					: blobAttributes ?
 						Blob.prototype
+					: headersEntries ?
+						Headers.prototype
 					: Object.prototype
 
 				if (prototype != expectedPrototype) {
@@ -814,7 +839,7 @@ export const toJsodd = (value: unknown, {
 					sharedArrayBufferByteLength != undefined || typedArrayAttributes ||
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
 					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue ||
-					domExceptionAttributes || dateTime != undefined || blobAttributes
+					domExceptionAttributes || dateTime != undefined || blobAttributes || headersEntries != undefined
 				)
 					o += `\n${indent()}`
 
@@ -1453,6 +1478,15 @@ if (import.meta.vitest) {
 				<type>: "text/plain"
 				<lastModified>: 1770302972135
 				<name>: "hi.txt"
+			}"
+		`)
+	})
+
+	test(`headers`, () => {
+		expect(toJsodd(new Headers({ foo: `bar` }))).toMatchInlineSnapshot(`
+			"Headers {
+				<entry 0 key>: "foo"
+				<entry 0 value>: "bar"
 			}"
 		`)
 	})
