@@ -16,7 +16,7 @@ const TypedArray = Reflect.getPrototypeOf(Uint8Array) as {
 }
 
 const GeneratorFunction = (function* () {}).constructor
-const GeneratorPrototype = GeneratorFunction.prototype.prototype
+const GeneratorPrototype: object = GeneratorFunction.prototype.prototype
 const AsyncFunction = (async () => {}).constructor
 const AsyncGenerator = Reflect.getPrototypeOf((async function* () {}).prototype)!.constructor
 const arrayIterator = [].values()
@@ -61,12 +61,12 @@ const nodeBlobSymbolKeys = Object.getOwnPropertySymbols(emptyBlob)
 const NodeBlobKHandle = nodeBlobSymbolKeys.find(symbol => symbol.description == `kHandle`)
 const NodeBlobKLength = nodeBlobSymbolKeys.find(symbol => symbol.description == `kLength`)
 const NodeBlobKType = nodeBlobSymbolKeys.find(symbol => symbol.description == `kType`)
-const NodeInternalBlob = NodeBlobKHandle && emptyBlob[NodeBlobKHandle].constructor
+const NodeInternalBlob: object | undefined = NodeBlobKHandle && emptyBlob[NodeBlobKHandle].constructor
 const blobTypeGetter = Reflect.getOwnPropertyDescriptor(Blob.prototype, `type`).get!
 const blobSizeGetter = Reflect.getOwnPropertyDescriptor(Blob.prototype, `size`).get!
 const emptyFile: any = new File([], ``)
 const NodeFileKState = Object.getOwnPropertySymbols(emptyFile).find(symbol => symbol.description == `state`)
-const NodeFileState = NodeFileKState && emptyFile[NodeFileKState].constructor
+const NodeFileState: object | undefined = NodeFileKState && emptyFile[NodeFileKState].constructor
 const fileNameGetter = Reflect.getOwnPropertyDescriptor(File.prototype, `name`).get!
 const fileLastModifiedGetter = Reflect.getOwnPropertyDescriptor(File.prototype, `lastModified`).get!
 const fileWebkitRelativePath = Reflect.getOwnPropertyDescriptor(File.prototype, `webkitRelativePath`)?.get
