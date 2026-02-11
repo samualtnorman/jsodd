@@ -235,6 +235,9 @@ const functionLengthDescriptorIsProper = (function_: object, descriptor?: Proper
 
 declare const InternalError: object
 declare const Temporal: object
+declare const fetchLater: object
+declare const DeferredRequestInit: object
+declare const FetchLaterResult: object
 
 const builtinFriendlyNames = mapFriendlyNames({
 	// Standard built-in objects (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects)
