@@ -248,6 +248,12 @@ declare const fetchLater: object
 declare const DeferredRequestInit: object
 declare const FetchLaterResult: object
 
+const angleNames = (toAngleName: Record<string, object | symbol | undefined>): Record<string, object | symbol> =>
+	Object.fromEntries(
+		Object.entries(toAngleName)
+			.flatMap(([ key, value ]) => value ? [ [ `<${key}>`, value ] ] : [])
+	)
+
 const builtinFriendlyNames = mapFriendlyNames({
 	// Standard built-in objects (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects)
 		// Fundamental objects
@@ -281,7 +287,6 @@ const builtinFriendlyNames = mapFriendlyNames({
 
 		// Indexed collections
 		Array,
-		"<TypedArray>": TypedArray,
 		Int8Array,
 		Uint8Array,
 		Uint8ClampedArray,
@@ -328,9 +333,6 @@ const builtinFriendlyNames = mapFriendlyNames({
 		// Control abstraction objects
 		...typeof Iterator != `undefined` ? { Iterator } : undefined,
 		Promise,
-		"<GeneratorFunction>": GeneratorFunction,
-		"<AsyncGenerator>": AsyncGenerator,
-		"<AsyncFunction>": AsyncFunction,
 		...typeof AsyncDisposableStack != `undefined` ? { AsyncDisposableStack } : undefined,
 
 		// Reflection
@@ -361,34 +363,36 @@ const builtinFriendlyNames = mapFriendlyNames({
 	Request,
 	Response,
 
-	// Unsorted
-	"<GeneratorPrototype>": GeneratorPrototype,
-	"<ArrayIteratorPrototype>": ArrayIteratorPrototype,
-	"<StringIteratorPrototype>": StringIteratorPrototype,
-	"<MapIteratorPrototype>": MapIteratorPrototype,
-	"<SetIteratorPrototype>": SetIteratorPrototype,
-	...IteratorHelperPrototype && { "<IteratorHelperPrototype>": IteratorHelperPrototype },
-	"<RegExpStringIteratorHelper>": RegExpStringIteratorHelper,
-	"<SegmentsPrototype>": SegmentsPrototype,
-	"<SegmentsIteratorPrototype>": SegmentsIteratorPrototype,
-	...WrapForValidIteratorPrototype && { "<WrapForValidIteratorPrototype>": WrapForValidIteratorPrototype },
-
-	...v8ErrorStackDescriptor?.get && { "<V8ErrorStackGetter>": v8ErrorStackDescriptor.get },
-	...v8ErrorStackDescriptor?.set && { "<V8ErrorStackSetter>": v8ErrorStackDescriptor.set },
-
-	...NodeBlobKHandle && { "<NodeBlobKHandle>": NodeBlobKHandle },
-	...NodeBlobKLength && { "<NodeBlobKLength>": NodeBlobKLength },
-	...NodeBlobKType && { "<NodeBlobKType>": NodeBlobKType },
-	...NodeInternalBlob && { "<NodeInternalBlob>": NodeInternalBlob },
-	...NodeFileKState && { "<NodeFileKState>": NodeFileKState },
-	...NodeFileState && { "<NodeFileState>": NodeFileState },
-
-	...NodeDOMExceptionMessagingCloneSymbol && { "<NodeDOMExceptionMessagingCloneSymbol>": NodeDOMExceptionMessagingCloneSymbol },
-	...NodeDOMExceptionMessagingDeserializeSymbol && { "<NodeDOMExceptionMessagingDeserializeSymbol>": NodeDOMExceptionMessagingDeserializeSymbol },
-	...NodeEventTargetKNewListenerSymbol && { "<NodeEventTargetKNewListenerSymbol>": NodeEventTargetKNewListenerSymbol },
-	...NodeEventTargetKRemoveListenerSymbol && { "<NodeEventTargetKRemoveListenerSymbol>": NodeEventTargetKRemoveListenerSymbol },
-	...NodeEventTargetKRemoveWeakListenerHelperSymbol && { "<NodeEventTargetKRemoveWeakListenerHelperSymbol>": NodeEventTargetKRemoveWeakListenerHelperSymbol },
-	...NodeEventTargetKCreateEventSymbol && { "<NodeEventTargetKCreateEventSymbol>": NodeEventTargetKCreateEventSymbol }
+	...angleNames({
+		TypedArray,
+		GeneratorFunction,
+		AsyncGenerator,
+		AsyncFunction,
+		GeneratorPrototype,
+		ArrayIteratorPrototype,
+		StringIteratorPrototype,
+		MapIteratorPrototype,
+		SetIteratorPrototype,
+		IteratorHelperPrototype,
+		RegExpStringIteratorHelper,
+		SegmentsPrototype,
+		SegmentsIteratorPrototype,
+		WrapForValidIteratorPrototype,
+		V8ErrorStackGetter: v8ErrorStackDescriptor?.get,
+		V8ErrorStackSetter: v8ErrorStackDescriptor?.set,
+		NodeBlobKHandle,
+		NodeBlobKLength,
+		NodeBlobKType,
+		NodeInternalBlob,
+		NodeFileKState,
+		NodeFileState,
+		NodeDOMExceptionMessagingCloneSymbol,
+		NodeDOMExceptionMessagingDeserializeSymbol,
+		NodeEventTargetKNewListenerSymbol,
+		NodeEventTargetKRemoveListenerSymbol,
+		NodeEventTargetKRemoveWeakListenerHelperSymbol,
+		NodeEventTargetKCreateEventSymbol,
+	})
 })
 
 builtinFriendlyNames.map.set(globalThis, `globalThis`)
