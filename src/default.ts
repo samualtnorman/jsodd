@@ -767,7 +767,9 @@ export const toJsodd = (value: unknown, {
 				const prototype = Reflect.getPrototypeOf(value)
 
 				const expectedPrototype =
-					mapEntries ?
+					regexSource ?
+						RegExp.prototype
+					: mapEntries ?
 						Map.prototype
 					: typeof value == `function` ?
 						Function.prototype
@@ -1050,7 +1052,6 @@ if (import.meta.vitest) {
 		expect(toJsodd(/ab+c/g)).toMatchInlineSnapshot(`
 			"/ab+c/g {
 				unconfigurable unenumerable lastIndex: 0
-				<prototype>: RegExp.prototype
 			}"
 		`)
 	})
