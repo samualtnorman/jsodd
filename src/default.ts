@@ -114,18 +114,26 @@ const getDOMExceptionAttributes = (value: unknown): { name: string, message: str
 
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
 
-const symbolToJsodd = (symbol: symbol, names: Map<unknown, string>, valueName: string): string => {
+const symbolToJsodd = (symbol: symbol, friendlyNames: FriendlyNames, valueName?: string): string => {
 	const symbolKey = Symbol.keyFor(symbol)
 
 	if (symbolKey != undefined)
 		return `Symbol.for(${JSON.stringify(symbolKey)})`
 
-	if (names.has(symbol))
-		return names.get(symbol)!
+	if (friendlyNames.map.has(symbol))
+		return friendlyNames.map.get(symbol)!
 
-	names.set(symbol, valueName || `.`)
+	if (valueName != undefined)
+		friendlyNames.map.set(symbol, valueName || `.`)
 
-	return `Symbol(${symbol.description == null ? `` : JSON.stringify(symbol.description)})`
+	let jsodd = `Symbol(${symbol.description == null ? `` : JSON.stringify(symbol.description)})`
+
+	if (valueName == undefined) {
+		jsodd += ` *${++friendlyNames.symbolReferenceCount}`
+		friendlyNames.map.set(symbol, jsodd)
+	}
+
+	return jsodd
 }
 
 export type FriendlyNames = { map: Map<object | symbol, string>, symbolReferenceCount: number }
@@ -413,7 +421,7 @@ export const toJsodd = (value: unknown, {
 		else if (typeof value == `string`)
 			o += stringToJsodd(value, { indentLevel: indentLevel + 1, indentString })
 		else if (typeof value == `symbol`)
-			o += symbolToJsodd(value, friendlyNames.map, valueName)
+			o += symbolToJsodd(value, friendlyNames, valueName)
 		else if (JSON.isRawJSON?.(value)) {
 			o += `RawJSON ${JSON.stringify(value.rawJSON)}`
 		} else if (typeof value == `function` || isObject(value)) {
@@ -591,7 +599,7 @@ export const toJsodd = (value: unknown, {
 					stringifyEntry(`<primitive>`, JSON.stringify(numberObjectValue))
 
 				if (symbolObjectValue)
-					stringifyEntry(`<primitive>`, `${symbolToJsodd(symbolObjectValue, friendlyNames.map, `${valueName}.<primitive>`)}`)
+					stringifyEntry(`<primitive>`, `${symbolToJsodd(symbolObjectValue, friendlyNames, `${valueName}.<primitive>`)}`)
 
 				const stringifyProperties = (value: object, keys: Set<string | symbol>, isStatic: boolean): void => {
 					for (const key of keys) {
@@ -620,10 +628,8 @@ export const toJsodd = (value: unknown, {
 								keyString = keyName = `[Symbol.for(${JSON.stringify(symbolKey)})]`
 							else if (friendlyNames.map.has(key))
 								keyString = keyName = `[${friendlyNames.map.get(key)!}]`
-							else {
-								keyString = `[${symbolToJsodd(key, friendlyNames.map, `<symbol *${++friendlyNames.symbolReferenceCount}>`)} *${friendlyNames.symbolReferenceCount}]`
-								keyName = `[<symbol *${friendlyNames.symbolReferenceCount}>]`
-							}
+							else
+								keyString = keyName = `[${symbolToJsodd(key, friendlyNames)}]`
 						} else
 							keyString = keyName = formatName(key)
 
@@ -906,7 +912,7 @@ if (import.meta.vitest) {
 
 		expect(toJsodd({ [symbol]: symbol })).toMatchInlineSnapshot(`
 			"{
-				[Symbol("foo") *7]: <symbol *7>
+				[Symbol("foo") *7]: Symbol("foo") *7
 			}"
 		`)
 	})
@@ -917,10 +923,10 @@ if (import.meta.vitest) {
 		expect(toJsodd({ a: { [symbol]: symbol }, b: { [symbol]: symbol } })).toMatchInlineSnapshot(`
 			"{
 				a: {
-					[Symbol("foo") *7]: <symbol *7>
+					[Symbol("foo") *7]: Symbol("foo") *7
 				}
 				b: {
-					[<symbol *7>]: <symbol *7>
+					[Symbol("foo") *7]: Symbol("foo") *7
 				}
 			}"
 		`)
@@ -1124,8 +1130,8 @@ if (import.meta.vitest) {
 		})).toMatchInlineSnapshot(`
 			"{
 				[Symbol("a") *7]: Symbol("b")
-				[.[<symbol *7>]]: Symbol("c")
-				[.[.[<symbol *7>]]]: <symbol *7>
+				[.[Symbol("a") *7]]: Symbol("c")
+				[.[.[Symbol("a") *7]]]: Symbol("a") *7
 			}"
 		`)
 	})
@@ -1145,8 +1151,8 @@ if (import.meta.vitest) {
 			"{
 				foo: {
 					[Symbol("a") *7]: Symbol("b")
-					[.foo[<symbol *7>]]: Symbol("c")
-					[.foo[.foo[<symbol *7>]]]: <symbol *7>
+					[.foo[Symbol("a") *7]]: Symbol("c")
+					[.foo[.foo[Symbol("a") *7]]]: Symbol("a") *7
 				}
 			}"
 		`)
