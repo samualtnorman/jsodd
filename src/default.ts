@@ -71,6 +71,15 @@ const fileNameGetter = Reflect.getOwnPropertyDescriptor(File.prototype, `name`).
 const fileLastModifiedGetter = Reflect.getOwnPropertyDescriptor(File.prototype, `lastModified`).get!
 const fileWebkitRelativePath = Reflect.getOwnPropertyDescriptor(File.prototype, `webkitRelativePath`)?.get
 
+const domExceptionPrototypeSymbolKeys = Object.getOwnPropertySymbols(DOMException.prototype)
+const NodeDOMExceptionMessagingCloneSymbol = domExceptionPrototypeSymbolKeys.find(symbol => symbol.description == `messaging_clone_symbol`)
+const NodeDOMExceptionMessagingDeserializeSymbol = domExceptionPrototypeSymbolKeys.find(symbol => symbol.description == `messaging_deserialize_symbol`)
+const eventTargetPrototypeSymbolKeys = Object.getOwnPropertySymbols(EventTarget.prototype)
+const NodeEventTargetKNewListenerSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kNewListener`)
+const NodeEventTargetKRemoveListenerSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kRemoveListener`)
+const NodeEventTargetKRemoveWeakListenerHelperSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kRemoveWeakListenerHelper`)
+const NodeEventTargetKCreateEventSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kCreateEvent`)
+
 const getBlobAttributes = (value: unknown): { size: number, type: string } | undefined =>
 	tryCatch(() => ({ size: blobSizeGetter.call(value), type: blobTypeGetter.call(value) }))
 
@@ -372,7 +381,14 @@ const builtinFriendlyNames = mapFriendlyNames({
 	...NodeBlobKType && { "<NodeBlobKType>": NodeBlobKType },
 	...NodeInternalBlob && { "<NodeInternalBlob>": NodeInternalBlob },
 	...NodeFileKState && { "<NodeFileKState>": NodeFileKState },
-	...NodeFileState && { "<NodeFileState>": NodeFileState }
+	...NodeFileState && { "<NodeFileState>": NodeFileState },
+
+	...NodeDOMExceptionMessagingCloneSymbol && { "<NodeDOMExceptionMessagingCloneSymbol>": NodeDOMExceptionMessagingCloneSymbol },
+	...NodeDOMExceptionMessagingDeserializeSymbol && { "<NodeDOMExceptionMessagingDeserializeSymbol>": NodeDOMExceptionMessagingDeserializeSymbol },
+	...NodeEventTargetKNewListenerSymbol && { "<NodeEventTargetKNewListenerSymbol>": NodeEventTargetKNewListenerSymbol },
+	...NodeEventTargetKRemoveListenerSymbol && { "<NodeEventTargetKRemoveListenerSymbol>": NodeEventTargetKRemoveListenerSymbol },
+	...NodeEventTargetKRemoveWeakListenerHelperSymbol && { "<NodeEventTargetKRemoveWeakListenerHelperSymbol>": NodeEventTargetKRemoveWeakListenerHelperSymbol },
+	...NodeEventTargetKCreateEventSymbol && { "<NodeEventTargetKCreateEventSymbol>": NodeEventTargetKCreateEventSymbol }
 })
 
 builtinFriendlyNames.map.set(globalThis, `globalThis`)
@@ -900,7 +916,7 @@ if (import.meta.vitest) {
 
 		expect(toJsodd({ [symbol]: symbol })).toMatchInlineSnapshot(`
 			"{
-				[Symbol("foo") *7]: Symbol("foo") *7
+				[Symbol("foo") *1]: Symbol("foo") *1
 			}"
 		`)
 	})
@@ -911,10 +927,10 @@ if (import.meta.vitest) {
 		expect(toJsodd({ a: { [symbol]: symbol }, b: { [symbol]: symbol } })).toMatchInlineSnapshot(`
 			"{
 				a: {
-					[Symbol("foo") *7]: Symbol("foo") *7
+					[Symbol("foo") *1]: Symbol("foo") *1
 				}
 				b: {
-					[Symbol("foo") *7]: Symbol("foo") *7
+					[Symbol("foo") *1]: Symbol("foo") *1
 				}
 			}"
 		`)
@@ -1117,9 +1133,9 @@ if (import.meta.vitest) {
 			[c]: a
 		})).toMatchInlineSnapshot(`
 			"{
-				[Symbol("a") *7]: Symbol("b")
-				[.[Symbol("a") *7]]: Symbol("c")
-				[.[.[Symbol("a") *7]]]: Symbol("a") *7
+				[Symbol("a") *1]: Symbol("b")
+				[.[Symbol("a") *1]]: Symbol("c")
+				[.[.[Symbol("a") *1]]]: Symbol("a") *1
 			}"
 		`)
 	})
@@ -1138,9 +1154,9 @@ if (import.meta.vitest) {
 		})).toMatchInlineSnapshot(`
 			"{
 				foo: {
-					[Symbol("a") *7]: Symbol("b")
-					[.foo[Symbol("a") *7]]: Symbol("c")
-					[.foo[.foo[Symbol("a") *7]]]: Symbol("a") *7
+					[Symbol("a") *1]: Symbol("b")
+					[.foo[Symbol("a") *1]]: Symbol("c")
+					[.foo[.foo[Symbol("a") *1]]]: Symbol("a") *1
 				}
 			}"
 		`)
