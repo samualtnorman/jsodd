@@ -58,27 +58,27 @@ const typedArrayTagGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototyp
 
 const emptyBlob: any = new Blob
 const nodeBlobSymbolKeys = Object.getOwnPropertySymbols(emptyBlob)
-const NodeBlobKHandle = nodeBlobSymbolKeys.find(symbol => symbol.description == `kHandle`)
-const NodeBlobKLength = nodeBlobSymbolKeys.find(symbol => symbol.description == `kLength`)
-const NodeBlobKType = nodeBlobSymbolKeys.find(symbol => symbol.description == `kType`)
-const NodeInternalBlob: object | undefined = NodeBlobKHandle && emptyBlob[NodeBlobKHandle].constructor
+const NodeJsBlobHandleSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kHandle`)
+const NodeJsBlobLengthSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kLength`)
+const NodeJsBlobTypeSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kType`)
+const NodeJsInternalBlob: object | undefined = NodeJsBlobHandleSymbol && emptyBlob[NodeJsBlobHandleSymbol].constructor
 const blobTypeGetter = Reflect.getOwnPropertyDescriptor(Blob.prototype, `type`).get!
 const blobSizeGetter = Reflect.getOwnPropertyDescriptor(Blob.prototype, `size`).get!
 const emptyFile: any = new File([], ``)
-const NodeFileKState = Object.getOwnPropertySymbols(emptyFile).find(symbol => symbol.description == `state`)
-const NodeFileState: object | undefined = NodeFileKState && emptyFile[NodeFileKState].constructor
+const NodeJsFileStateSymbol = Object.getOwnPropertySymbols(emptyFile).find(symbol => symbol.description == `state`)
+const NodeJsFileState: object | undefined = NodeJsFileStateSymbol && emptyFile[NodeJsFileStateSymbol].constructor
 const fileNameGetter = Reflect.getOwnPropertyDescriptor(File.prototype, `name`).get!
 const fileLastModifiedGetter = Reflect.getOwnPropertyDescriptor(File.prototype, `lastModified`).get!
 const fileWebkitRelativePath = Reflect.getOwnPropertyDescriptor(File.prototype, `webkitRelativePath`)?.get
 
 const domExceptionPrototypeSymbolKeys = Object.getOwnPropertySymbols(DOMException.prototype)
-const NodeDOMExceptionMessagingCloneSymbol = domExceptionPrototypeSymbolKeys.find(symbol => symbol.description == `messaging_clone_symbol`)
-const NodeDOMExceptionMessagingDeserializeSymbol = domExceptionPrototypeSymbolKeys.find(symbol => symbol.description == `messaging_deserialize_symbol`)
+const NodeJsDOMExceptionMessagingCloneSymbol = domExceptionPrototypeSymbolKeys.find(symbol => symbol.description == `messaging_clone_symbol`)
+const NodeJsDOMExceptionMessagingDeserializeSymbol = domExceptionPrototypeSymbolKeys.find(symbol => symbol.description == `messaging_deserialize_symbol`)
 const eventTargetPrototypeSymbolKeys = Object.getOwnPropertySymbols(EventTarget.prototype)
-const NodeEventTargetKNewListenerSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kNewListener`)
-const NodeEventTargetKRemoveListenerSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kRemoveListener`)
-const NodeEventTargetKRemoveWeakListenerHelperSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kRemoveWeakListenerHelper`)
-const NodeEventTargetKCreateEventSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kCreateEvent`)
+const NodeJsEventTargetNewListenerSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kNewListener`)
+const NodeJsEventTargetRemoveListenerSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kRemoveListener`)
+const NodeJsEventTargetRemoveWeakListenerHelperSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kRemoveWeakListenerHelper`)
+const NodeJsEventTargetCreateEventSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kCreateEvent`)
 
 const getBlobAttributes = (value: unknown): { size: number, type: string } | undefined =>
 	tryCatch(() => ({ size: blobSizeGetter.call(value), type: blobTypeGetter.call(value) }))
@@ -380,18 +380,18 @@ const builtinFriendlyNames = mapFriendlyNames({
 		WrapForValidIteratorPrototype,
 		V8ErrorStackGetter: v8ErrorStackDescriptor?.get,
 		V8ErrorStackSetter: v8ErrorStackDescriptor?.set,
-		NodeBlobKHandle,
-		NodeBlobKLength,
-		NodeBlobKType,
-		NodeInternalBlob,
-		NodeFileKState,
-		NodeFileState,
-		NodeDOMExceptionMessagingCloneSymbol,
-		NodeDOMExceptionMessagingDeserializeSymbol,
-		NodeEventTargetKNewListenerSymbol,
-		NodeEventTargetKRemoveListenerSymbol,
-		NodeEventTargetKRemoveWeakListenerHelperSymbol,
-		NodeEventTargetKCreateEventSymbol,
+		NodeJsBlobHandleSymbol,
+		NodeJsBlobLengthSymbol,
+		NodeJsBlobTypeSymbol,
+		NodeJsInternalBlob,
+		NodeJsFileStateSymbol,
+		NodeJsFileState,
+		NodeJsDOMExceptionMessagingCloneSymbol,
+		NodeJsDOMExceptionMessagingDeserializeSymbol,
+		NodeJsEventTargetNewListenerSymbol,
+		NodeJsEventTargetRemoveListenerSymbol,
+		NodeJsEventTargetRemoveWeakListenerHelperSymbol,
+		NodeJsEventTargetCreateEventSymbol
 	})
 })
 
@@ -1443,11 +1443,11 @@ if (import.meta.vitest) {
 			toJsodd(new Blob([ `foo` ], { type: `text/plain`, endings: `native` }))
 		).toMatchInlineSnapshot(`
 			"Blob {
-				[<NodeBlobKHandle>]: {
-					<prototype>: <NodeInternalBlob>.prototype
+				[<NodeJsBlobHandleSymbol>]: {
+					<prototype>: <NodeJsInternalBlob>.prototype
 				}
-				[<NodeBlobKLength>]: 3
-				[<NodeBlobKType>]: "text/plain"
+				[<NodeJsBlobLengthSymbol>]: 3
+				[<NodeJsBlobTypeSymbol>]: "text/plain"
 				<size>: 3
 				<type>: "text/plain"
 			}"
@@ -1461,15 +1461,15 @@ if (import.meta.vitest) {
 			{ endings: `transparent`, lastModified: 1770302972135, type: `text/plain` }
 		))).toMatchInlineSnapshot(`
 			"File {
-				[<NodeBlobKHandle>]: {
-					<prototype>: <NodeInternalBlob>.prototype
+				[<NodeJsBlobHandleSymbol>]: {
+					<prototype>: <NodeJsInternalBlob>.prototype
 				}
-				[<NodeBlobKLength>]: 11
-				[<NodeBlobKType>]: "text/plain"
-				[<NodeFileKState>]: {
+				[<NodeJsBlobLengthSymbol>]: 11
+				[<NodeJsBlobTypeSymbol>]: "text/plain"
+				[<NodeJsFileStateSymbol>]: {
 					name: "hi.txt"
 					lastModified: 1770302972135
-					<prototype>: <NodeFileState>.prototype
+					<prototype>: <NodeJsFileState>.prototype
 				}
 				<size>: 11
 				<type>: "text/plain"
