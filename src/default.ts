@@ -1413,7 +1413,7 @@ if (import.meta.vitest) {
 	test(`multiline string`, () => {
 		expect(toJsodd({ foo: `bar\nbaz\nqux` })).toMatchInlineSnapshot(`
 			"{
-				foo:
+				foo: 
 					"bar\\n"
 					"baz\\n"
 					"qux"
