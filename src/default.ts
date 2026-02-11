@@ -618,23 +618,8 @@ export const toJsodd = (value: unknown, {
 						if (descriptor.writable == false && !isActuallyFrozen(value))
 							prefix += `readonly `
 
-						let keyString
-						let keyName
-
-						if (typeof key == `symbol`) {
-							const symbolKey = Symbol.keyFor(key)
-
-							if (symbolKey != undefined)
-								keyString = keyName = `[Symbol.for(${JSON.stringify(symbolKey)})]`
-							else if (friendlyNames.map.has(key))
-								keyString = keyName = `[${friendlyNames.map.get(key)!}]`
-							else
-								keyString = keyName = `[${symbolToJsodd(key, friendlyNames)}]`
-						} else
-							keyString = keyName = formatName(key)
-
-						const expectedFunctionName =
-							typeof key == `string` ? key : `[${key.description}]`
+						const keyName = typeof key == `symbol` ? `[${symbolToJsodd(key, friendlyNames)}]` : formatName(key)
+						const expectedFunctionName = typeof key == `string` ? key : `[${key.description}]`
 
 						const stringifyKeyAndValue = (value: unknown, expectedFunctionName: string, name: string) => {
 							let isTerseMethod = false
@@ -653,16 +638,16 @@ export const toJsodd = (value: unknown, {
 						}
 
 						if (`value` in descriptor) {
-							o += `${prefix}${keyString}`
+							o += `${prefix}${keyName}`
 							stringifyKeyAndValue(descriptor.value, expectedFunctionName, `${valueName}${valueName && valueName != `.` && keyName[0] == `[` ? `` : `.`}${keyName}`)
 						} else {
 							if (descriptor.get) {
-								o += `${prefix}get ${keyString}`
+								o += `${prefix}get ${keyName}`
 								stringifyKeyAndValue(descriptor.get, `get ${expectedFunctionName}`, `${valueName}.<get ${keyName}>`)
 							}
 
 							if (descriptor.set) {
-								o += `${prefix}set ${keyString}`
+								o += `${prefix}set ${keyName}`
 								stringifyKeyAndValue(descriptor.set, `set ${expectedFunctionName}`, `${valueName}.<set ${keyName}>`)
 							}
 						}
