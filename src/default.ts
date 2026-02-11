@@ -1,24 +1,6 @@
 import type { LaxPartial } from "@samual/types"
 import { tryCatch } from "@samual/try"
 
-const WellKnownSymbols = new Map([
-	[ Symbol.isConcatSpreadable, `Symbol.isConcatSpreadable` ],
-	[ Symbol.iterator, `Symbol.iterator` ],
-	[ Symbol.match, `Symbol.match` ],
-	[ Symbol.replace, `Symbol.replace` ],
-	[ Symbol.search, `Symbol.search` ],
-	[ Symbol.species, `Symbol.species` ],
-	[ Symbol.hasInstance, `Symbol.hasInstance` ],
-	[ Symbol.split, `Symbol.split` ],
-	[ Symbol.toPrimitive, `Symbol.toPrimitive` ],
-	[ Symbol.toStringTag, `Symbol.toStringTag` ],
-	[ Symbol.unscopables, `Symbol.unscopables` ],
-	[ Symbol.asyncIterator, `Symbol.asyncIterator` ],
-	[ Symbol.matchAll, `Symbol.matchAll` ],
-	[ Symbol.dispose, `Symbol.dispose` ],
-	[ Symbol.asyncDispose, `Symbol.asyncDispose` ]
-])
-
 const isObject = (value: unknown): value is object =>
 	(!!value && typeof value == `object`) || typeof value == `function`
 
@@ -646,7 +628,7 @@ export const toJsodd = (value: unknown, {
 							keyString = keyName = formatName(key)
 
 						const expectedFunctionName =
-							typeof key == `string` ? key : `[${WellKnownSymbols.get(key) || key.description}]`
+							typeof key == `string` ? key : `[${key.description}]`
 
 						const stringifyKeyAndValue = (value: unknown, expectedFunctionName: string, name: string) => {
 							let isTerseMethod = false
