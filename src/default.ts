@@ -121,6 +121,46 @@ const getDOMExceptionAttributes = (value: unknown): { name: string, message: str
 		code: domExceptionCodeGetter?.call(value)
 	}))
 
+const requestMethodGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `method`).get
+const requestUrlGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `url`).get
+const requestHeadersGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `headers`).get
+const requestDestinationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `destination`).get
+const requestReferrerGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `referrer`).get
+const requestReferrerPolicyGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `referrerPolicy`).get
+const requestModeGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `mode`).get
+const requestCredentialsGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `credentials`).get
+const requestCacheGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `cache`).get
+const requestRedirectGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `redirect`).get
+const requestIntegrityGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `integrity`).get
+const requestKeepaliveGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `keepalive`).get
+const requestIsReloadNavigationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `isReloadNavigation` as any).get as () => unknown
+const requestIsHistoryNavigationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `isHistoryNavigation` as any).get as () => unknown
+const requestSignalGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `signal`).get
+const requestBodyGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `body`).get
+const requestBodyUsedGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `bodyUsed`).get
+const requestDuplexGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `duplex` as any).get
+
+const getRequestAttributes = (value: unknown) => tryCatch(() => ({
+	method: requestMethodGetter?.call(value),
+	url: requestUrlGetter?.call(value),
+	headers: requestHeadersGetter?.call(value),
+	destination: requestDestinationGetter?.call(value),
+	referrer: requestReferrerGetter?.call(value),
+	referrerPolicy: requestReferrerPolicyGetter?.call(value),
+	mode: requestModeGetter?.call(value),
+	credentials: requestCredentialsGetter?.call(value),
+	cache: requestCacheGetter?.call(value),
+	redirect: requestRedirectGetter?.call(value),
+	integrity: requestIntegrityGetter?.call(value),
+	keepalive: requestKeepaliveGetter?.call(value),
+	isReloadNavigation: requestIsReloadNavigationGetter?.call(value),
+	isHistoryNavigation: requestIsHistoryNavigationGetter?.call(value),
+	signal: requestSignalGetter?.call(value),
+	body: requestBodyGetter?.call(value),
+	bodyUsed: requestBodyUsedGetter?.call(value),
+	duplex: requestDuplexGetter?.call(value)
+}))
+
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
 
 const symbolToJsodd = (symbol: symbol, friendlyNames: FriendlyNames, valueName?: string): string => {
@@ -601,6 +641,11 @@ export const toJsodd = (value: unknown, {
 				if (headersEntries)
 					o += `Headers `
 
+				const requestAttributes = getRequestAttributes(value)
+
+				if (requestAttributes)
+					o += `Request `
+
 				const isArray = Array.isArray(value) || typedArrayAttributes
 
 				o += isArray ? `[` : `{`
@@ -732,7 +777,7 @@ export const toJsodd = (value: unknown, {
 				}
 
 				const stringifyField = (key: string, value: string | number): void => {
-					o += `\n${indent()}${key}: ${JSON.stringify(value)}`
+					o += `\n${indent()}${key}: ${toJsodd(value)}`
 				}
 
 				if (dateTime != undefined)
@@ -758,6 +803,11 @@ export const toJsodd = (value: unknown, {
 						o += `\n${indent()}<entry ${index} value>: `
 						stringify(value, `${valueName}.<entry ${index} value>`)
 					}
+				}
+
+				if (requestAttributes) {
+					for (const [ key, value ] of Object.entries(requestAttributes))
+						stringifyField(`<${key}>`, value)
 				}
 
 				const prototype = Reflect.getPrototypeOf(value)
@@ -822,6 +872,8 @@ export const toJsodd = (value: unknown, {
 						Blob.prototype
 					: headersEntries ?
 						Headers.prototype
+					: requestAttributes ?
+						Request.prototype
 					: Object.prototype
 
 				if (prototype != expectedPrototype) {
@@ -837,7 +889,8 @@ export const toJsodd = (value: unknown, {
 					sharedArrayBufferByteLength != undefined || typedArrayAttributes ||
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
 					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue ||
-					domExceptionAttributes || dateTime != undefined || blobAttributes || headersEntries != undefined
+					domExceptionAttributes || dateTime != undefined || blobAttributes || headersEntries != undefined ||
+					requestAttributes
 				)
 					o += `\n${indent()}`
 
@@ -1484,6 +1537,112 @@ if (import.meta.vitest) {
 			"Headers {
 				<entry 0 key>: "foo"
 				<entry 0 value>: "bar"
+			}"
+		`)
+	})
+
+	test(`request`, () => {
+		expect(toJsodd(new Request(`https://samual.uk/`, { headers: { foo: `bar` } }))).toMatchInlineSnapshot(`
+			"Request {
+				<method>: "GET"
+				<url>: "https://samual.uk/"
+				<headers>: Headers {
+				<entry 0 key>: "foo"
+				<entry 0 value>: "bar"
+			}
+				<destination>: ""
+				<referrer>: "about:client"
+				<referrerPolicy>: ""
+				<mode>: "cors"
+				<credentials>: "same-origin"
+				<cache>: "default"
+				<redirect>: "follow"
+				<integrity>: ""
+				<keepalive>: false
+				<isReloadNavigation>: false
+				<isHistoryNavigation>: false
+				<signal>: {
+				[Symbol("kEvents") *1]: Map {
+					<prototype>: frozen {
+						unenumerable constructor: frozen function SafeMap(0) {
+							unenumerable prototype: .[Symbol("kEvents") *1].<prototype>
+							unenumerable groupBy: Map.groupBy
+							unenumerable get [Symbol.species]: Map.<get [Symbol.species]>
+							<prototype>: Map
+						}
+						unenumerable get: Map.prototype.get
+						unenumerable set: Map.prototype.set
+						unenumerable has: Map.prototype.has
+						unenumerable delete: Map.prototype.delete
+						unenumerable clear: Map.prototype.clear
+						unenumerable entries: function ""(0) {
+							unconfigurable unenumerable prototype: {
+								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.entries
+							}
+						}
+						unenumerable forEach: Map.prototype.forEach
+						unenumerable keys: function ""(0) {
+							unconfigurable unenumerable prototype: {
+								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.keys
+							}
+						}
+						unenumerable get size: Map.prototype.<get size>
+						unenumerable values: function ""(0) {
+							unconfigurable unenumerable prototype: {
+								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.values
+							}
+						}
+						unenumerable [Symbol.toStringTag]: "Map"
+						unenumerable [Symbol.iterator]: function ""(0) {
+							unconfigurable unenumerable prototype: {
+								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>[Symbol.iterator]
+							}
+						}
+						<prototype>: null
+					}
+				}
+				[Symbol("events.maxEventTargetListeners") *2]: 0
+				[Symbol("events.maxEventTargetListenersWarned") *3]: false
+				[Symbol("kHandlers") *4]: Map {
+					<prototype>: .[Symbol("kEvents") *1].<prototype>
+				}
+				[Symbol("kAborted") *5]: false
+				[Symbol("kReason") *6]: undefined
+				[Symbol("kComposite") *7]: false
+				<prototype>: {
+					unenumerable constructor: function AbortSignal(0) {
+						unconfigurable unenumerable readonly prototype: .<prototype>
+						unenumerable abort(0) {}
+						unenumerable timeout(1) {}
+						unenumerable any(1) {}
+						<prototype>: EventTarget
+					}
+					get aborted(0) {}
+					unenumerable get reason(0) {}
+					unenumerable throwIfAborted(0) {}
+					get onabort(0) {
+						unconfigurable unenumerable prototype: {
+							unenumerable constructor: .<prototype>.<get onabort>
+						}
+					}
+					set onabort(1) {
+						unconfigurable unenumerable prototype: {
+							unenumerable constructor: .<prototype>.<set onabort>
+						}
+					}
+					unenumerable [Symbol.for("nodejs.util.inspect.custom")](2) {}
+					unenumerable [<NodeJsEventTargetNewListenerSymbol>](7) {}
+					unenumerable [<NodeJsEventTargetRemoveListenerSymbol>](4) {}
+					unenumerable [Symbol("messaging_transfer_symbol") *8](0) {}
+					unenumerable [Symbol("messaging_transfer_list_symbol") *9](0) {}
+					unenumerable [<NodeJsDOMExceptionMessagingDeserializeSymbol>](1) {}
+					unenumerable readonly [Symbol.toStringTag]: "AbortSignal"
+					<prototype>: EventTarget.prototype
+				}
+			}
+				<body>: null
+				<bodyUsed>: false
+				<duplex>: "half"
 			}"
 		`)
 	})
