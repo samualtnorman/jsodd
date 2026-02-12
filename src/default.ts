@@ -846,7 +846,7 @@ export const toJsodd = (value: unknown, {
 						o += `\n${indent()}<code>: ${JSON.stringify(code)}`
 				}
 
-				const stringifyField = (key: string, value: string | number): void => {
+				const stringifyField = (key: string, value: unknown): void => {
 					o += `\n${indent()}${key}: `
 					stringify(value, `${valueName}.${key}`)
 				}
