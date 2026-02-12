@@ -1673,4 +1673,56 @@ if (import.meta.vitest) {
 	test(`empty headers`, () => {
 		expect(toJsodd(new Headers)).toMatchInlineSnapshot(`"Headers {}"`)
 	})
+
+	test(`event target`, () => {
+		expect(toJsodd(new EventTarget)).toMatchInlineSnapshot(`
+			"{
+				[Symbol("kEvents") *1]: Map {
+					<prototype>: frozen {
+						unenumerable constructor: frozen function SafeMap(0) {
+							unenumerable prototype: .[Symbol("kEvents") *1].<prototype>
+							unenumerable groupBy: Map.groupBy
+							unenumerable get [Symbol.species]: Map.<get [Symbol.species]>
+							<prototype>: Map
+						}
+						unenumerable get: Map.prototype.get
+						unenumerable set: Map.prototype.set
+						unenumerable has: Map.prototype.has
+						unenumerable delete: Map.prototype.delete
+						unenumerable clear: Map.prototype.clear
+						unenumerable entries: function ""(0) {
+							unconfigurable unenumerable prototype: {
+								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.entries
+							}
+						}
+						unenumerable forEach: Map.prototype.forEach
+						unenumerable keys: function ""(0) {
+							unconfigurable unenumerable prototype: {
+								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.keys
+							}
+						}
+						unenumerable get size: Map.prototype.<get size>
+						unenumerable values: function ""(0) {
+							unconfigurable unenumerable prototype: {
+								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.values
+							}
+						}
+						unenumerable [Symbol.toStringTag]: "Map"
+						unenumerable [Symbol.iterator]: function ""(0) {
+							unconfigurable unenumerable prototype: {
+								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>[Symbol.iterator]
+							}
+						}
+						<prototype>: null
+					}
+				}
+				[Symbol("events.maxEventTargetListeners") *2]: 10
+				[Symbol("events.maxEventTargetListenersWarned") *3]: false
+				[Symbol("kHandlers") *4]: Map {
+					<prototype>: .[Symbol("kEvents") *1].<prototype>
+				}
+				<prototype>: EventTarget.prototype
+			}"
+		`)
+	})
 }
