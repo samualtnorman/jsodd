@@ -606,10 +606,6 @@ export const toJsodd = (value: unknown, {
 					o += `Map `
 
 				const stack = getErrorStack(value)
-
-				if (stack != undefined)
-					o += `Error `
-
 				const setValues = tryCatch(() => Set.prototype.values.call(value).map((value, index) => [ index, value ]).toArray())
 
 				if (setValues)
@@ -687,6 +683,8 @@ export const toJsodd = (value: unknown, {
 
 				if (domExceptionAttributes)
 					o += `DOMException `
+				else if (stack != undefined)
+					o += `Error `
 
 				const dateTime = tryCatch(() => Date.prototype.getTime.call(value))
 
@@ -891,6 +889,8 @@ export const toJsodd = (value: unknown, {
 						Function.prototype
 					: Array.isArray(value) ?
 						Array.prototype
+					: domExceptionAttributes ?
+						DOMException.prototype
 					: stack != undefined ?
 						Error.prototype
 					: setValues ?
@@ -932,8 +932,6 @@ export const toJsodd = (value: unknown, {
 						Promise.prototype
 					: symbolObjectValue ?
 						Symbol.prototype
-					: domExceptionAttributes ?
-						DOMException.prototype
 					: dateTime != undefined ?
 						Date.prototype
 					: fileAttributes ?
@@ -1678,14 +1676,13 @@ if (import.meta.vitest) {
 		error.stack = `bar`
 
 		expect(toJsodd(error)).toMatchInlineSnapshot(`
-			"Error DOMException {
+			"DOMException {
 				unenumerable get stack: <V8ErrorStackGetter>
 				unenumerable set stack: <V8ErrorStackSetter>
 				<stack>: "bar"
 				<name>: "Error"
 				<message>: "foo"
 				<code>: 0
-				<prototype>: DOMException.prototype
 			}"
 		`)
 	})
