@@ -94,6 +94,8 @@ const NodeJsEventTargetEventsMaxEventTargetListenersSymbol = eventTargetInstance
 const NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol = eventTargetInstanceSymbolKeys.find(symbol => symbol.description == `events.maxEventTargetListenersWarned`)
 const NodeJsEventTargetHandlersSymbol = eventTargetInstanceSymbolKeys.find(symbol => symbol.description == `kHandlers`)
 
+const NodeJsSafeMap: object | undefined = NodeJsEventTargetEventsSymbol && (eventTarget as any)[NodeJsEventTargetEventsSymbol]?.constructor
+
 const getBlobAttributes = (value: unknown): { size: number, type: string } | undefined =>
 	tryCatch(() => ({ size: blobSizeGetter.call(value), type: blobTypeGetter.call(value) }))
 
@@ -489,7 +491,8 @@ const builtinFriendlyNames = mapFriendlyNames({
 		NodeJsEventTargetEventsSymbol,
 		NodeJsEventTargetEventsMaxEventTargetListenersSymbol,
 		NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol,
-		NodeJsEventTargetHandlersSymbol
+		NodeJsEventTargetHandlersSymbol,
+		NodeJsSafeMap
 	})
 })
 
@@ -1626,48 +1629,12 @@ if (import.meta.vitest) {
 				<isHistoryNavigation>: false
 				<signal>: {
 					[<NodeJsEventTargetEventsSymbol>]: Map {
-						<prototype>: frozen {
-							unenumerable constructor: frozen function SafeMap(0) {
-								unenumerable prototype: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>
-								unenumerable groupBy: Map.groupBy
-								unenumerable get [Symbol.species]: Map.<get [Symbol.species]>
-								<prototype>: Map
-							}
-							unenumerable get: Map.prototype.get
-							unenumerable set: Map.prototype.set
-							unenumerable has: Map.prototype.has
-							unenumerable delete: Map.prototype.delete
-							unenumerable clear: Map.prototype.clear
-							unenumerable entries: function ""(0) {
-								unconfigurable unenumerable prototype: {
-									unenumerable constructor: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>.entries
-								}
-							}
-							unenumerable forEach: Map.prototype.forEach
-							unenumerable keys: function ""(0) {
-								unconfigurable unenumerable prototype: {
-									unenumerable constructor: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>.keys
-								}
-							}
-							unenumerable get size: Map.prototype.<get size>
-							unenumerable values: function ""(0) {
-								unconfigurable unenumerable prototype: {
-									unenumerable constructor: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>.values
-								}
-							}
-							unenumerable [Symbol.toStringTag]: "Map"
-							unenumerable [Symbol.iterator]: function ""(0) {
-								unconfigurable unenumerable prototype: {
-									unenumerable constructor: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>[Symbol.iterator]
-								}
-							}
-							<prototype>: null
-						}
+						<prototype>: <NodeJsSafeMap>.prototype
 					}
 					[<NodeJsEventTargetEventsMaxEventTargetListenersSymbol>]: 0
 					[<NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol>]: false
 					[<NodeJsEventTargetHandlersSymbol>]: Map {
-						<prototype>: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>
+						<prototype>: <NodeJsSafeMap>.prototype
 					}
 					[Symbol("kAborted") *1]: false
 					[Symbol("kReason") *2]: undefined
@@ -1689,48 +1656,12 @@ if (import.meta.vitest) {
 		expect(toJsodd(new EventTarget)).toMatchInlineSnapshot(`
 			"{
 				[<NodeJsEventTargetEventsSymbol>]: Map {
-					<prototype>: frozen {
-						unenumerable constructor: frozen function SafeMap(0) {
-							unenumerable prototype: .[<NodeJsEventTargetEventsSymbol>].<prototype>
-							unenumerable groupBy: Map.groupBy
-							unenumerable get [Symbol.species]: Map.<get [Symbol.species]>
-							<prototype>: Map
-						}
-						unenumerable get: Map.prototype.get
-						unenumerable set: Map.prototype.set
-						unenumerable has: Map.prototype.has
-						unenumerable delete: Map.prototype.delete
-						unenumerable clear: Map.prototype.clear
-						unenumerable entries: function ""(0) {
-							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[<NodeJsEventTargetEventsSymbol>].<prototype>.entries
-							}
-						}
-						unenumerable forEach: Map.prototype.forEach
-						unenumerable keys: function ""(0) {
-							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[<NodeJsEventTargetEventsSymbol>].<prototype>.keys
-							}
-						}
-						unenumerable get size: Map.prototype.<get size>
-						unenumerable values: function ""(0) {
-							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[<NodeJsEventTargetEventsSymbol>].<prototype>.values
-							}
-						}
-						unenumerable [Symbol.toStringTag]: "Map"
-						unenumerable [Symbol.iterator]: function ""(0) {
-							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[<NodeJsEventTargetEventsSymbol>].<prototype>[Symbol.iterator]
-							}
-						}
-						<prototype>: null
-					}
+					<prototype>: <NodeJsSafeMap>.prototype
 				}
 				[<NodeJsEventTargetEventsMaxEventTargetListenersSymbol>]: 10
 				[<NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol>]: false
 				[<NodeJsEventTargetHandlersSymbol>]: Map {
-					<prototype>: .[<NodeJsEventTargetEventsSymbol>].<prototype>
+					<prototype>: <NodeJsSafeMap>.prototype
 				}
 				<prototype>: EventTarget.prototype
 			}"
