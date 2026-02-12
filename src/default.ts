@@ -138,11 +138,11 @@ const domExceptionNameGetter = getGetter(DOMException.prototype, `name`)
 const domExceptionMessageGetter = getGetter(DOMException.prototype, `message`)
 const domExceptionCodeGetter = getGetter(DOMException.prototype, `code`)
 
-const getDOMExceptionAttributes = (value: unknown): { name: string, message: string, code: number | undefined } | undefined =>
+const getDOMExceptionAttributes = (value: unknown): { name: string, message: string, code?: number } | undefined =>
 	domExceptionNameGetter && domExceptionMessageGetter && tryCatch(() => ({
 		name: domExceptionNameGetter.call(value),
 		message: domExceptionMessageGetter.call(value),
-		code: domExceptionCodeGetter?.call(value)
+		...domExceptionCodeGetter && { code: domExceptionCodeGetter.call(value) }
 	}))
 
 const requestMethodGetter = getGetter(Request.prototype, `method`)
@@ -840,18 +840,14 @@ export const toJsodd = (value: unknown, {
 					o += `\n${indent()}<byteLength>: ${dataViewAttributes.byteLength}\n${indent()}<byteOffset>: ${dataViewAttributes.byteOffset}`
 				}
 
-				if (domExceptionAttributes) {
-					const { name, message, code } = domExceptionAttributes
-
-					o += `\n${indent()}<name>: ${JSON.stringify(name)}\n${indent()}<message>: ${JSON.stringify(message)}`
-
-					if (code != undefined)
-						o += `\n${indent()}<code>: ${JSON.stringify(code)}`
-				}
-
 				const stringifyField = (key: string, value: unknown): void => {
 					o += `\n${indent()}${key}: `
 					stringify(value, `${valueName}.${key}`)
+				}
+
+				if (domExceptionAttributes) {
+					for (const [ key, value ] of Object.entries(domExceptionAttributes))
+						stringifyField(`<${key}>`, value)
 				}
 
 				if (dateTime != undefined)
