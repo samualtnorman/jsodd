@@ -636,7 +636,11 @@ export const toJsodd = (value: unknown, {
 						o += `Blob `
 				}
 
-				const headersEntries = tryCatch(() => Headers.prototype.entries.call(value))
+				const headersEntries = tryCatch(() =>
+					Headers.prototype.entries.call(value)
+						.map(([ key, value ], index): [ number, string, string ] => [ index, key, value ])
+						.toArray()
+				)
 
 				if (headersEntries)
 					o += `Headers `
@@ -798,7 +802,7 @@ export const toJsodd = (value: unknown, {
 				}
 
 				if (headersEntries) {
-					for (const [ index, key, value ] of headersEntries.map(([ key, value ], index) => [ index, key, value ])) {
+					for (const [ index, key, value ] of headersEntries) {
 						o += `\n${indent()}<entry ${index} key>: `
 						stringify(key, `${valueName}.<entry ${index} key>`)
 						o += `\n${indent()}<entry ${index} value>: `
@@ -890,7 +894,7 @@ export const toJsodd = (value: unknown, {
 					sharedArrayBufferByteLength != undefined || typedArrayAttributes ||
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
 					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue ||
-					domExceptionAttributes || dateTime != undefined || blobAttributes || headersEntries != undefined ||
+					domExceptionAttributes || dateTime != undefined || blobAttributes || headersEntries?.length ||
 					requestAttributes
 				)
 					o += `\n${indent()}`
@@ -1649,9 +1653,6 @@ if (import.meta.vitest) {
 	})
 
 	test(`empty headers`, () => {
-		expect(toJsodd(new Headers)).toMatchInlineSnapshot(`
-			"Headers {
-			}"
-		`)
+		expect(toJsodd(new Headers)).toMatchInlineSnapshot(`"Headers {}"`)
 	})
 }
