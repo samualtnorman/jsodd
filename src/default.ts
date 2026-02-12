@@ -36,30 +36,30 @@ const SegmentsIteratorPrototype = getPrototype(segments[Symbol.iterator]())!
 const IteratorHelperPrototype = (arrayIterator.map && getPrototype(arrayIterator.map(_ => _))!) as object | undefined
 const WrapForValidIteratorPrototype = typeof Iterator == `function` ? getPrototype(Iterator.from({} as any))! : undefined
 
-const regExpSourceGetter = getGetter(RegExp.prototype, `source`)!
-const regExpFlagsGetter = getGetter(RegExp.prototype, `flags`)!
+const regExpSourceGetter = getGetter(RegExp.prototype, `source`)
+const regExpFlagsGetter = getGetter(RegExp.prototype, `flags`)
 const v8ErrorStackDescriptor = Reflect.getOwnPropertyDescriptor(Error(), `stack`) as PropertyDescriptor<string | undefined> | undefined
 const errorStackGetter = v8ErrorStackDescriptor?.get || getGetter(Error.prototype, `stack`)
-const arrayBufferByteLengthGetter = getGetter(ArrayBuffer.prototype, `byteLength`)!
+const arrayBufferByteLengthGetter = getGetter(ArrayBuffer.prototype, `byteLength`)
 
 const sharedArrayBufferByteLengthGetter = typeof SharedArrayBuffer == `function`
 	? getGetter(SharedArrayBuffer.prototype, `byteLength`)
 	: undefined
 
-const dataViewBufferGetter = getGetter(DataView.prototype, `buffer`)!
-const dataViewByteLengthGetter = getGetter(DataView.prototype, `byteLength`)!
-const dataViewByteOffsetGetter = getGetter(DataView.prototype, `byteOffset`)!
+const dataViewBufferGetter = getGetter(DataView.prototype, `buffer`)
+const dataViewByteLengthGetter = getGetter(DataView.prototype, `byteLength`)
+const dataViewByteOffsetGetter = getGetter(DataView.prototype, `byteOffset`)
 
-const getRegexSource = (regex: unknown): string | undefined => tryCatch(() => `/${regExpSourceGetter.call(regex)}/${regExpFlagsGetter.call(regex)}`)
+const getRegexSource = (regex: unknown): string | undefined => regExpSourceGetter && regExpFlagsGetter && tryCatch(() => `/${regExpSourceGetter.call(regex)}/${regExpFlagsGetter.call(regex)}`)
 const getErrorStack = (error: unknown): string | undefined => tryCatch(() => errorStackGetter?.call(error))
-const getArrayBufferByteLength = (value: unknown): number | undefined => tryCatch(() => arrayBufferByteLengthGetter.call(value))
+const getArrayBufferByteLength = (value: unknown): number | undefined => arrayBufferByteLengthGetter && tryCatch(() => arrayBufferByteLengthGetter.call(value))
 const getSharedArrayBufferByteLength = (value: unknown) => tryCatch(() => sharedArrayBufferByteLengthGetter?.call(value) as number | undefined)
 
-const typedArrayBufferGetter = getGetter(TypedArray.prototype, `buffer`)!
-const typedArrayByteLengthGetter = getGetter(TypedArray.prototype, "byteLength")!
-const typedArrayByteOffsetGetter = getGetter(TypedArray.prototype, "byteOffset")!
-const typedArrayLengthGetter = getGetter(TypedArray.prototype, "length")!
-const typedArrayTagGetter = getGetter(TypedArray.prototype, Symbol.toStringTag)!
+const typedArrayBufferGetter = getGetter(TypedArray.prototype, `buffer`)
+const typedArrayByteLengthGetter = getGetter(TypedArray.prototype, "byteLength")
+const typedArrayByteOffsetGetter = getGetter(TypedArray.prototype, "byteOffset")
+const typedArrayLengthGetter = getGetter(TypedArray.prototype, "length")
+const typedArrayTagGetter = getGetter(TypedArray.prototype, Symbol.toStringTag)
 
 const emptyBlob: any = new Blob
 const nodeBlobSymbolKeys = Object.getOwnPropertySymbols(emptyBlob)
@@ -67,13 +67,13 @@ const NodeJsBlobHandleSymbol = nodeBlobSymbolKeys.find(symbol => symbol.descript
 const NodeJsBlobLengthSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kLength`)
 const NodeJsBlobTypeSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kType`)
 const NodeJsInternalBlob: object | undefined = NodeJsBlobHandleSymbol && emptyBlob[NodeJsBlobHandleSymbol].constructor
-const blobTypeGetter = getGetter(Blob.prototype, `type`)!
-const blobSizeGetter = getGetter(Blob.prototype, `size`)!
+const blobTypeGetter = getGetter(Blob.prototype, `type`)
+const blobSizeGetter = getGetter(Blob.prototype, `size`)
 const emptyFile: any = new File([], ``)
 const NodeJsFileStateSymbol = Object.getOwnPropertySymbols(emptyFile).find(symbol => symbol.description == `state`)
 const NodeJsFileState: object | undefined = NodeJsFileStateSymbol && emptyFile[NodeJsFileStateSymbol].constructor
-const fileNameGetter = getGetter(File.prototype, `name`)!
-const fileLastModifiedGetter = getGetter(File.prototype, `lastModified`)!
+const fileNameGetter = getGetter(File.prototype, `name`)
+const fileLastModifiedGetter = getGetter(File.prototype, `lastModified`)
 const fileWebkitRelativePath = getGetter(File.prototype, `webkitRelativePath`)
 
 const domExceptionPrototypeSymbolKeys = Object.getOwnPropertySymbols(DOMException.prototype)
@@ -102,9 +102,11 @@ const NodeJsEventTargetHandlersSymbol = eventTargetInstanceSymbolKeys.find(symbo
 const NodeJsSafeMap: object | undefined = NodeJsEventTargetEventsSymbol && (eventTarget as any)[NodeJsEventTargetEventsSymbol]?.constructor
 
 const getBlobAttributes = (value: unknown): { size: number, type: string } | undefined =>
+	blobSizeGetter && blobTypeGetter &&
 	tryCatch(() => ({ size: blobSizeGetter.call(value), type: blobTypeGetter.call(value) }))
 
 const getFileAttributes = (value: unknown): { size: number, type: string, lastModified: number, name: string, webkitRelativePath?: string } | undefined =>
+	blobSizeGetter && blobTypeGetter && fileLastModifiedGetter && fileNameGetter &&
 	tryCatch(() => ({
 		size: blobSizeGetter.call(value),
 		type: blobTypeGetter.call(value),
@@ -115,28 +117,29 @@ const getFileAttributes = (value: unknown): { size: number, type: string, lastMo
 
 const getTypedArrayAttributes = (value: unknown):
 	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, tag: string } | undefined =>
-	tryCatch(() => ({
-		buffer: typedArrayBufferGetter.call(value),
-		byteLength: typedArrayByteLengthGetter.call(value),
-		byteOffset: typedArrayByteOffsetGetter.call(value),
-		length: typedArrayLengthGetter.call(value),
-		tag: typedArrayTagGetter.call(value)
-	}))
+	typedArrayBufferGetter && typedArrayByteLengthGetter && typedArrayByteOffsetGetter && typedArrayLengthGetter &&
+		typedArrayTagGetter && tryCatch(() => ({
+			buffer: typedArrayBufferGetter.call(value),
+			byteLength: typedArrayByteLengthGetter.call(value),
+			byteOffset: typedArrayByteOffsetGetter.call(value),
+			length: typedArrayLengthGetter.call(value),
+			tag: typedArrayTagGetter.call(value)
+		}))
 
 const getDataViewAttributes = (value: unknown):
 	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number } | undefined =>
-	tryCatch(() => ({
+	dataViewBufferGetter && dataViewByteLengthGetter && dataViewByteOffsetGetter && tryCatch(() => ({
 		buffer: dataViewBufferGetter.call(value),
 		byteLength: dataViewByteLengthGetter.call(value),
 		byteOffset: dataViewByteOffsetGetter.call(value)
 	}))
 
-const domExceptionNameGetter = getGetter(DOMException.prototype, `name`)!
-const domExceptionMessageGetter = getGetter(DOMException.prototype, `message`)!
+const domExceptionNameGetter = getGetter(DOMException.prototype, `name`)
+const domExceptionMessageGetter = getGetter(DOMException.prototype, `message`)
 const domExceptionCodeGetter = getGetter(DOMException.prototype, `code`)
 
 const getDOMExceptionAttributes = (value: unknown): { name: string, message: string, code: number | undefined } | undefined =>
-	tryCatch(() => ({
+	domExceptionNameGetter && domExceptionMessageGetter && tryCatch(() => ({
 		name: domExceptionNameGetter.call(value),
 		message: domExceptionMessageGetter.call(value),
 		code: domExceptionCodeGetter?.call(value)
