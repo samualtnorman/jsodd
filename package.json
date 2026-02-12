@@ -28,12 +28,12 @@
 	"devDependencies": {
 		"@babel/plugin-syntax-typescript": "^7.27.1",
 		"@rollup/plugin-babel": "^6.1.0",
-		"@samual/rolldown-config": "jsr:0.0.1-5e79465",
+		"@samual/rolldown-config": "jsr:0.0.1-3fd95b2",
 		"@total-typescript/ts-reset": "^0.6.1",
 		"babel-plugin-here": "^1.0.2",
 		"eta": "^4.5.0",
 		"jsr": "^0.14.1",
-		"rolldown": "1.0.0-beta.53",
+		"rolldown": "1.0.0-rc.4",
 		"semver": "^7.7.3",
 		"typescript": "^5.9.3",
 		"vitest": "^4.0.15"
