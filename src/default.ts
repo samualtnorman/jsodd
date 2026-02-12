@@ -11,25 +11,27 @@ const isActuallyFrozen = (target: object) => !Reflect.isExtensible(target) && Re
 	return !(configurable || writable)
 })
 
-const TypedArray = Reflect.getPrototypeOf(Uint8Array) as {
+const getPrototype = Reflect.getPrototypeOf
+
+const TypedArray = getPrototype(Uint8Array) as {
 	prototype: { buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, [Symbol.toStringTag]: string }
 }
 
 const GeneratorFunction = (function* () {}).constructor
 const GeneratorPrototype: object = GeneratorFunction.prototype.prototype
 const AsyncFunction = (async () => {}).constructor
-const AsyncGenerator = Reflect.getPrototypeOf((async function* () {}).prototype)!.constructor
+const AsyncGenerator = getPrototype((async function* () {}).prototype)!.constructor
 const arrayIterator = [].values()
-const ArrayIteratorPrototype = Reflect.getPrototypeOf(arrayIterator)!
-const StringIteratorPrototype = Reflect.getPrototypeOf(``[Symbol.iterator]())!
-const MapIteratorPrototype = Reflect.getPrototypeOf(new Map().values())!
-const SetIteratorPrototype = Reflect.getPrototypeOf(new Set().values())!
-const RegExpStringIteratorHelper = Reflect.getPrototypeOf(/a/[Symbol.matchAll](``))!
+const ArrayIteratorPrototype = getPrototype(arrayIterator)!
+const StringIteratorPrototype = getPrototype(``[Symbol.iterator]())!
+const MapIteratorPrototype = getPrototype(new Map().values())!
+const SetIteratorPrototype = getPrototype(new Set().values())!
+const RegExpStringIteratorHelper = getPrototype(/a/[Symbol.matchAll](``))!
 const segments = new Intl.Segmenter().segment(``)
-const SegmentsPrototype = Reflect.getPrototypeOf(segments)!
-const SegmentsIteratorPrototype = Reflect.getPrototypeOf(segments[Symbol.iterator]())!
-const IteratorHelperPrototype = (arrayIterator.map && Reflect.getPrototypeOf(arrayIterator.map(_ => _))!) as object | undefined
-const WrapForValidIteratorPrototype = typeof Iterator == `function` ? Reflect.getPrototypeOf(Iterator.from({} as any))! : undefined
+const SegmentsPrototype = getPrototype(segments)!
+const SegmentsIteratorPrototype = getPrototype(segments[Symbol.iterator]())!
+const IteratorHelperPrototype = (arrayIterator.map && getPrototype(arrayIterator.map(_ => _))!) as object | undefined
+const WrapForValidIteratorPrototype = typeof Iterator == `function` ? getPrototype(Iterator.from({} as any))! : undefined
 
 const regExpSourceGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, `source`).get!
 const regExpFlagsGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, `flags`).get!
@@ -274,7 +276,7 @@ export const mapFriendlyNames = (values: Record<string, object | symbol>): Frien
 			}
 		}
 
-		const prototype = Reflect.getPrototypeOf(item.value)
+		const prototype = getPrototype(item.value)
 
 		if (prototype && !names.has(prototype)) {
 			const prototypeName = `${item.name}.<prototype>`
@@ -876,7 +878,7 @@ export const toJsodd = (value: unknown, {
 						stringifyField(`<${key}>`, value)
 				}
 
-				const prototype = Reflect.getPrototypeOf(value)
+				const prototype = getPrototype(value)
 
 				const expectedPrototype =
 					regexSource ?
