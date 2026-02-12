@@ -1671,4 +1671,22 @@ if (import.meta.vitest) {
 			}"
 		`)
 	})
+
+	test(`dom exception`, () => {
+		const error = new DOMException(`foo`)
+
+		error.stack = `bar`
+
+		expect(toJsodd(error)).toMatchInlineSnapshot(`
+			"Error DOMException {
+				unenumerable get stack: <V8ErrorStackGetter>
+				unenumerable set stack: <V8ErrorStackSetter>
+				<stack>: "bar"
+				<name>: "Error"
+				<message>: "foo"
+				<code>: 0
+				<prototype>: DOMException.prototype
+			}"
+		`)
+	})
 }
