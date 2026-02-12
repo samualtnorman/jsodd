@@ -1647,4 +1647,11 @@ if (import.meta.vitest) {
 			}"
 		`)
 	})
+
+	test(`empty headers`, () => {
+		expect(toJsodd(new Headers)).toMatchInlineSnapshot(`
+			"Headers {
+			}"
+		`)
+	})
 }
