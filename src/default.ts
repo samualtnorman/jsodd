@@ -13,6 +13,9 @@ const isActuallyFrozen = (target: object) => !Reflect.isExtensible(target) && Re
 
 const getPrototype = Reflect.getPrototypeOf
 
+const getGetter = <T extends object, TKey extends keyof any>(target: T, key: TKey) =>
+	Reflect.getOwnPropertyDescriptor(target, key as any)?.get as TKey extends keyof T ? (() => T[TKey]) | undefined : (() => unknown) | undefined
+
 const TypedArray = getPrototype(Uint8Array) as {
 	prototype: { buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, [Symbol.toStringTag]: string }
 }
@@ -33,30 +36,30 @@ const SegmentsIteratorPrototype = getPrototype(segments[Symbol.iterator]())!
 const IteratorHelperPrototype = (arrayIterator.map && getPrototype(arrayIterator.map(_ => _))!) as object | undefined
 const WrapForValidIteratorPrototype = typeof Iterator == `function` ? getPrototype(Iterator.from({} as any))! : undefined
 
-const regExpSourceGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, `source`).get!
-const regExpFlagsGetter = Reflect.getOwnPropertyDescriptor(RegExp.prototype, `flags`).get!
+const regExpSourceGetter = getGetter(RegExp.prototype, `source`)!
+const regExpFlagsGetter = getGetter(RegExp.prototype, `flags`)!
 const v8ErrorStackDescriptor = Reflect.getOwnPropertyDescriptor(Error(), `stack`) as PropertyDescriptor<string | undefined> | undefined
-const errorStackGetter = v8ErrorStackDescriptor?.get || Reflect.getOwnPropertyDescriptor(Error.prototype, `stack`)?.get
-const arrayBufferByteLengthGetter = Reflect.getOwnPropertyDescriptor(ArrayBuffer.prototype, `byteLength`).get!
+const errorStackGetter = v8ErrorStackDescriptor?.get || getGetter(Error.prototype, `stack`)
+const arrayBufferByteLengthGetter = getGetter(ArrayBuffer.prototype, `byteLength`)!
 
 const sharedArrayBufferByteLengthGetter = typeof SharedArrayBuffer == `function`
-	? Reflect.getOwnPropertyDescriptor(SharedArrayBuffer.prototype, `byteLength`).get
+	? getGetter(SharedArrayBuffer.prototype, `byteLength`)
 	: undefined
 
-const dataViewBufferGetter = Reflect.getOwnPropertyDescriptor(DataView.prototype, `buffer`).get!
-const dataViewByteLengthGetter = Reflect.getOwnPropertyDescriptor(DataView.prototype, `byteLength`).get!
-const dataViewByteOffsetGetter = Reflect.getOwnPropertyDescriptor(DataView.prototype, `byteOffset`).get!
+const dataViewBufferGetter = getGetter(DataView.prototype, `buffer`)!
+const dataViewByteLengthGetter = getGetter(DataView.prototype, `byteLength`)!
+const dataViewByteOffsetGetter = getGetter(DataView.prototype, `byteOffset`)!
 
 const getRegexSource = (regex: unknown): string | undefined => tryCatch(() => `/${regExpSourceGetter.call(regex)}/${regExpFlagsGetter.call(regex)}`)
 const getErrorStack = (error: unknown): string | undefined => tryCatch(() => errorStackGetter?.call(error))
 const getArrayBufferByteLength = (value: unknown): number | undefined => tryCatch(() => arrayBufferByteLengthGetter.call(value))
 const getSharedArrayBufferByteLength = (value: unknown) => tryCatch(() => sharedArrayBufferByteLengthGetter?.call(value) as number | undefined)
 
-const typedArrayBufferGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, `buffer`).get!
-const typedArrayByteLengthGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteLength").get!
-const typedArrayByteOffsetGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "byteOffset").get!
-const typedArrayLengthGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, "length").get!
-const typedArrayTagGetter = Reflect.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag).get!
+const typedArrayBufferGetter = getGetter(TypedArray.prototype, `buffer`)!
+const typedArrayByteLengthGetter = getGetter(TypedArray.prototype, "byteLength")!
+const typedArrayByteOffsetGetter = getGetter(TypedArray.prototype, "byteOffset")!
+const typedArrayLengthGetter = getGetter(TypedArray.prototype, "length")!
+const typedArrayTagGetter = getGetter(TypedArray.prototype, Symbol.toStringTag)!
 
 const emptyBlob: any = new Blob
 const nodeBlobSymbolKeys = Object.getOwnPropertySymbols(emptyBlob)
@@ -64,14 +67,14 @@ const NodeJsBlobHandleSymbol = nodeBlobSymbolKeys.find(symbol => symbol.descript
 const NodeJsBlobLengthSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kLength`)
 const NodeJsBlobTypeSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kType`)
 const NodeJsInternalBlob: object | undefined = NodeJsBlobHandleSymbol && emptyBlob[NodeJsBlobHandleSymbol].constructor
-const blobTypeGetter = Reflect.getOwnPropertyDescriptor(Blob.prototype, `type`).get!
-const blobSizeGetter = Reflect.getOwnPropertyDescriptor(Blob.prototype, `size`).get!
+const blobTypeGetter = getGetter(Blob.prototype, `type`)!
+const blobSizeGetter = getGetter(Blob.prototype, `size`)!
 const emptyFile: any = new File([], ``)
 const NodeJsFileStateSymbol = Object.getOwnPropertySymbols(emptyFile).find(symbol => symbol.description == `state`)
 const NodeJsFileState: object | undefined = NodeJsFileStateSymbol && emptyFile[NodeJsFileStateSymbol].constructor
-const fileNameGetter = Reflect.getOwnPropertyDescriptor(File.prototype, `name`).get!
-const fileLastModifiedGetter = Reflect.getOwnPropertyDescriptor(File.prototype, `lastModified`).get!
-const fileWebkitRelativePath = Reflect.getOwnPropertyDescriptor(File.prototype, `webkitRelativePath`)?.get
+const fileNameGetter = getGetter(File.prototype, `name`)!
+const fileLastModifiedGetter = getGetter(File.prototype, `lastModified`)!
+const fileWebkitRelativePath = getGetter(File.prototype, `webkitRelativePath`)
 
 const domExceptionPrototypeSymbolKeys = Object.getOwnPropertySymbols(DOMException.prototype)
 const NodeJsDOMExceptionMessagingCloneSymbol = domExceptionPrototypeSymbolKeys.find(symbol => symbol.description == `messaging_clone_symbol`)
@@ -128,9 +131,9 @@ const getDataViewAttributes = (value: unknown):
 		byteOffset: dataViewByteOffsetGetter.call(value)
 	}))
 
-const domExceptionNameGetter = Reflect.getOwnPropertyDescriptor(DOMException.prototype, `name`).get!
-const domExceptionMessageGetter = Reflect.getOwnPropertyDescriptor(DOMException.prototype, `message`).get!
-const domExceptionCodeGetter = Reflect.getOwnPropertyDescriptor(DOMException.prototype, `code`).get
+const domExceptionNameGetter = getGetter(DOMException.prototype, `name`)!
+const domExceptionMessageGetter = getGetter(DOMException.prototype, `message`)!
+const domExceptionCodeGetter = getGetter(DOMException.prototype, `code`)
 
 const getDOMExceptionAttributes = (value: unknown): { name: string, message: string, code: number | undefined } | undefined =>
 	tryCatch(() => ({
@@ -139,24 +142,24 @@ const getDOMExceptionAttributes = (value: unknown): { name: string, message: str
 		code: domExceptionCodeGetter?.call(value)
 	}))
 
-const requestMethodGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `method`)?.get
-const requestUrlGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `url`)?.get
-const requestHeadersGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `headers`)?.get
-const requestDestinationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `destination`)?.get
-const requestReferrerGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `referrer`)?.get
-const requestReferrerPolicyGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `referrerPolicy`)?.get
-const requestModeGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `mode`)?.get
-const requestCredentialsGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `credentials`)?.get
-const requestCacheGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `cache`)?.get
-const requestRedirectGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `redirect`)?.get
-const requestIntegrityGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `integrity`)?.get
-const requestKeepaliveGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `keepalive`)?.get
-const requestIsReloadNavigationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `isReloadNavigation` as any)?.get as (() => unknown) | undefined
-const requestIsHistoryNavigationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `isHistoryNavigation` as any)?.get as (() => unknown) | undefined
-const requestSignalGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `signal`)?.get
-const requestBodyGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `body`)?.get
-const requestBodyUsedGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `bodyUsed`)?.get
-const requestDuplexGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `duplex` as any)?.get
+const requestMethodGetter = getGetter(Request.prototype, `method`)
+const requestUrlGetter = getGetter(Request.prototype, `url`)
+const requestHeadersGetter = getGetter(Request.prototype, `headers`)
+const requestDestinationGetter = getGetter(Request.prototype, `destination`)
+const requestReferrerGetter = getGetter(Request.prototype, `referrer`)
+const requestReferrerPolicyGetter = getGetter(Request.prototype, `referrerPolicy`)
+const requestModeGetter = getGetter(Request.prototype, `mode`)
+const requestCredentialsGetter = getGetter(Request.prototype, `credentials`)
+const requestCacheGetter = getGetter(Request.prototype, `cache`)
+const requestRedirectGetter = getGetter(Request.prototype, `redirect`)
+const requestIntegrityGetter = getGetter(Request.prototype, `integrity`)
+const requestKeepaliveGetter = getGetter(Request.prototype, `keepalive`)
+const requestIsReloadNavigationGetter = getGetter(Request.prototype, `isReloadNavigation`)
+const requestIsHistoryNavigationGetter = getGetter(Request.prototype, `isHistoryNavigation`)
+const requestSignalGetter = getGetter(Request.prototype, `signal`)
+const requestBodyGetter = getGetter(Request.prototype, `body`)
+const requestBodyUsedGetter = getGetter(Request.prototype, `bodyUsed`)
+const requestDuplexGetter = getGetter(Request.prototype, `duplex`)
 
 const getRequestAttributes = (value: unknown) => tryCatch(() => ({
 	...requestMethodGetter && { method: requestMethodGetter.call(value) },
