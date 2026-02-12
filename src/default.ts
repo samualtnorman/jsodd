@@ -87,6 +87,13 @@ const abortSignalSymbolKeys = Object.getOwnPropertySymbols(AbortSignal.prototype
 const NodeJsAbortSignalMessagingTransferSymbol = abortSignalSymbolKeys.find(symbol => symbol.description == `messaging_transfer_symbol`)
 const NodeJsAbortSignalMessagingTransferListSymbol = abortSignalSymbolKeys.find(symbol => symbol.description == `messaging_transfer_list_symbol`)
 
+const eventTarget = new EventTarget
+const eventTargetInstanceSymbolKeys = Object.getOwnPropertySymbols(eventTarget)
+const NodeJsEventTargetEventsSymbol = eventTargetInstanceSymbolKeys.find(symbol => symbol.description == `kEvents`)
+const NodeJsEventTargetEventsMaxEventTargetListenersSymbol = eventTargetInstanceSymbolKeys.find(symbol => symbol.description == `events.maxEventTargetListeners`)
+const NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol = eventTargetInstanceSymbolKeys.find(symbol => symbol.description == `events.maxEventTargetListenersWarned`)
+const NodeJsEventTargetHandlersSymbol = eventTargetInstanceSymbolKeys.find(symbol => symbol.description == `kHandlers`)
+
 const getBlobAttributes = (value: unknown): { size: number, type: string } | undefined =>
 	tryCatch(() => ({ size: blobSizeGetter.call(value), type: blobTypeGetter.call(value) }))
 
@@ -478,7 +485,11 @@ const builtinFriendlyNames = mapFriendlyNames({
 		NodeJsEventTargetCreateEventSymbol,
 		NodeJsAbortControllerMakeTransferableSymbol,
 		NodeJsAbortSignalMessagingTransferSymbol,
-		NodeJsAbortSignalMessagingTransferListSymbol
+		NodeJsAbortSignalMessagingTransferListSymbol,
+		NodeJsEventTargetEventsSymbol,
+		NodeJsEventTargetEventsMaxEventTargetListenersSymbol,
+		NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol,
+		NodeJsEventTargetHandlersSymbol
 	})
 })
 
@@ -1614,10 +1625,10 @@ if (import.meta.vitest) {
 				<isReloadNavigation>: false
 				<isHistoryNavigation>: false
 				<signal>: {
-					[Symbol("kEvents") *1]: Map {
+					[<NodeJsEventTargetEventsSymbol>]: Map {
 						<prototype>: frozen {
 							unenumerable constructor: frozen function SafeMap(0) {
-								unenumerable prototype: .<signal>[Symbol("kEvents") *1].<prototype>
+								unenumerable prototype: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>
 								unenumerable groupBy: Map.groupBy
 								unenumerable get [Symbol.species]: Map.<get [Symbol.species]>
 								<prototype>: Map
@@ -1629,38 +1640,38 @@ if (import.meta.vitest) {
 							unenumerable clear: Map.prototype.clear
 							unenumerable entries: function ""(0) {
 								unconfigurable unenumerable prototype: {
-									unenumerable constructor: .<signal>[Symbol("kEvents") *1].<prototype>.entries
+									unenumerable constructor: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>.entries
 								}
 							}
 							unenumerable forEach: Map.prototype.forEach
 							unenumerable keys: function ""(0) {
 								unconfigurable unenumerable prototype: {
-									unenumerable constructor: .<signal>[Symbol("kEvents") *1].<prototype>.keys
+									unenumerable constructor: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>.keys
 								}
 							}
 							unenumerable get size: Map.prototype.<get size>
 							unenumerable values: function ""(0) {
 								unconfigurable unenumerable prototype: {
-									unenumerable constructor: .<signal>[Symbol("kEvents") *1].<prototype>.values
+									unenumerable constructor: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>.values
 								}
 							}
 							unenumerable [Symbol.toStringTag]: "Map"
 							unenumerable [Symbol.iterator]: function ""(0) {
 								unconfigurable unenumerable prototype: {
-									unenumerable constructor: .<signal>[Symbol("kEvents") *1].<prototype>[Symbol.iterator]
+									unenumerable constructor: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>[Symbol.iterator]
 								}
 							}
 							<prototype>: null
 						}
 					}
-					[Symbol("events.maxEventTargetListeners") *2]: 0
-					[Symbol("events.maxEventTargetListenersWarned") *3]: false
-					[Symbol("kHandlers") *4]: Map {
-						<prototype>: .<signal>[Symbol("kEvents") *1].<prototype>
+					[<NodeJsEventTargetEventsMaxEventTargetListenersSymbol>]: 0
+					[<NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol>]: false
+					[<NodeJsEventTargetHandlersSymbol>]: Map {
+						<prototype>: .<signal>[<NodeJsEventTargetEventsSymbol>].<prototype>
 					}
-					[Symbol("kAborted") *5]: false
-					[Symbol("kReason") *6]: undefined
-					[Symbol("kComposite") *7]: false
+					[Symbol("kAborted") *1]: false
+					[Symbol("kReason") *2]: undefined
+					[Symbol("kComposite") *3]: false
 					<prototype>: AbortSignal.prototype
 				}
 				<body>: null
@@ -1677,10 +1688,10 @@ if (import.meta.vitest) {
 	test(`event target`, () => {
 		expect(toJsodd(new EventTarget)).toMatchInlineSnapshot(`
 			"{
-				[Symbol("kEvents") *1]: Map {
+				[<NodeJsEventTargetEventsSymbol>]: Map {
 					<prototype>: frozen {
 						unenumerable constructor: frozen function SafeMap(0) {
-							unenumerable prototype: .[Symbol("kEvents") *1].<prototype>
+							unenumerable prototype: .[<NodeJsEventTargetEventsSymbol>].<prototype>
 							unenumerable groupBy: Map.groupBy
 							unenumerable get [Symbol.species]: Map.<get [Symbol.species]>
 							<prototype>: Map
@@ -1692,34 +1703,34 @@ if (import.meta.vitest) {
 						unenumerable clear: Map.prototype.clear
 						unenumerable entries: function ""(0) {
 							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.entries
+								unenumerable constructor: .[<NodeJsEventTargetEventsSymbol>].<prototype>.entries
 							}
 						}
 						unenumerable forEach: Map.prototype.forEach
 						unenumerable keys: function ""(0) {
 							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.keys
+								unenumerable constructor: .[<NodeJsEventTargetEventsSymbol>].<prototype>.keys
 							}
 						}
 						unenumerable get size: Map.prototype.<get size>
 						unenumerable values: function ""(0) {
 							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.values
+								unenumerable constructor: .[<NodeJsEventTargetEventsSymbol>].<prototype>.values
 							}
 						}
 						unenumerable [Symbol.toStringTag]: "Map"
 						unenumerable [Symbol.iterator]: function ""(0) {
 							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>[Symbol.iterator]
+								unenumerable constructor: .[<NodeJsEventTargetEventsSymbol>].<prototype>[Symbol.iterator]
 							}
 						}
 						<prototype>: null
 					}
 				}
-				[Symbol("events.maxEventTargetListeners") *2]: 10
-				[Symbol("events.maxEventTargetListenersWarned") *3]: false
-				[Symbol("kHandlers") *4]: Map {
-					<prototype>: .[Symbol("kEvents") *1].<prototype>
+				[<NodeJsEventTargetEventsMaxEventTargetListenersSymbol>]: 10
+				[<NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol>]: false
+				[<NodeJsEventTargetHandlersSymbol>]: Map {
+					<prototype>: .[<NodeJsEventTargetEventsSymbol>].<prototype>
 				}
 				<prototype>: EventTarget.prototype
 			}"
