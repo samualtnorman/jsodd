@@ -80,6 +80,13 @@ const NodeJsEventTargetRemoveListenerSymbol = eventTargetPrototypeSymbolKeys.fin
 const NodeJsEventTargetRemoveWeakListenerHelperSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kRemoveWeakListenerHelper`)
 const NodeJsEventTargetCreateEventSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kCreateEvent`)
 
+const abortControllerSymbolKeys = Object.getOwnPropertySymbols(AbortController)
+const NodeJsAbortControllerMakeTransferableSymbol = abortControllerSymbolKeys.find(symbol => symbol.description == `kMakeTransferable`)
+
+const abortSignalSymbolKeys = Object.getOwnPropertySymbols(AbortSignal.prototype)
+const NodeJsAbortSignalMessagingTransferSymbol = abortSignalSymbolKeys.find(symbol => symbol.description == `messaging_transfer_symbol`)
+const NodeJsAbortSignalMessagingTransferListSymbol = abortSignalSymbolKeys.find(symbol => symbol.description == `messaging_transfer_list_symbol`)
+
 const getBlobAttributes = (value: unknown): { size: number, type: string } | undefined =>
 	tryCatch(() => ({ size: blobSizeGetter.call(value), type: blobTypeGetter.call(value) }))
 
@@ -287,6 +294,8 @@ declare const Temporal: object
 declare const fetchLater: object
 declare const DeferredRequestInit: object
 declare const FetchLaterResult: object
+declare const DOMError: object
+declare const QuotaExceededError: object
 
 const angleNames = (toAngleName: Record<string, object | symbol | undefined>): Record<string, object | symbol> =>
 	Object.fromEntries(
@@ -383,9 +392,44 @@ const builtinFriendlyNames = mapFriendlyNames({
 		Intl,
 
 	// Document Object Model (DOM) (https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model)
-	DOMException,
-	Event,
-	EventTarget,
+    ...typeof AbortController != `undefined` ? { AbortController } : undefined,
+    ...typeof AbortSignal != `undefined` ? { AbortSignal } : undefined,
+    ...typeof AbstractRange != `undefined` ? { AbstractRange } : undefined,
+    ...typeof Attr != `undefined` ? { Attr } : undefined,
+    ...typeof CDATASection != `undefined` ? { CDATASection } : undefined,
+    ...typeof CharacterData != `undefined` ? { CharacterData } : undefined,
+    ...typeof Comment != `undefined` ? { Comment } : undefined,
+    ...typeof CustomEvent != `undefined` ? { CustomEvent } : undefined,
+    ...typeof Document != `undefined` ? { Document } : undefined,
+    ...typeof DocumentFragment != `undefined` ? { DocumentFragment } : undefined,
+    ...typeof DocumentType != `undefined` ? { DocumentType } : undefined,
+    ...typeof DOMError != `undefined` ? { DOMError } : undefined,
+    ...typeof DOMException != `undefined` ? { DOMException } : undefined,
+    ...typeof DOMImplementation != `undefined` ? { DOMImplementation } : undefined,
+    ...typeof DOMParser != `undefined` ? { DOMParser } : undefined,
+    ...typeof DOMTokenList != `undefined` ? { DOMTokenList } : undefined,
+    ...typeof Element != `undefined` ? { Element } : undefined,
+    ...typeof Event != `undefined` ? { Event } : undefined,
+    ...typeof EventTarget != `undefined` ? { EventTarget } : undefined,
+    ...typeof HTMLCollection != `undefined` ? { HTMLCollection } : undefined,
+    ...typeof MutationObserver != `undefined` ? { MutationObserver } : undefined,
+    ...typeof MutationRecord != `undefined` ? { MutationRecord } : undefined,
+    ...typeof NamedNodeMap != `undefined` ? { NamedNodeMap } : undefined,
+    ...typeof Node != `undefined` ? { Node } : undefined,
+    ...typeof NodeIterator != `undefined` ? { NodeIterator } : undefined,
+    ...typeof NodeList != `undefined` ? { NodeList } : undefined,
+    ...typeof ProcessingInstruction != `undefined` ? { ProcessingInstruction } : undefined,
+    ...typeof QuotaExceededError != `undefined` ? { QuotaExceededError } : undefined,
+    ...typeof Range != `undefined` ? { Range } : undefined,
+    ...typeof ShadowRoot != `undefined` ? { ShadowRoot } : undefined,
+    ...typeof StaticRange != `undefined` ? { StaticRange } : undefined,
+    ...typeof Text != `undefined` ? { Text } : undefined,
+    ...typeof TreeWalker != `undefined` ? { TreeWalker } : undefined,
+    ...typeof XMLDocument != `undefined` ? { XMLDocument } : undefined,
+    ...typeof XPathEvaluator != `undefined` ? { XPathEvaluator } : undefined,
+    ...typeof XPathExpression != `undefined` ? { XPathExpression } : undefined,
+    ...typeof XPathResult != `undefined` ? { XPathResult } : undefined,
+    ...typeof XSLTProcessor != `undefined` ? { XSLTProcessor } : undefined,
 
 	// File API (https://developer.mozilla.org/en-US/docs/Web/API/File_API)
 	Blob,
@@ -431,7 +475,10 @@ const builtinFriendlyNames = mapFriendlyNames({
 		NodeJsEventTargetNewListenerSymbol,
 		NodeJsEventTargetRemoveListenerSymbol,
 		NodeJsEventTargetRemoveWeakListenerHelperSymbol,
-		NodeJsEventTargetCreateEventSymbol
+		NodeJsEventTargetCreateEventSymbol,
+		NodeJsAbortControllerMakeTransferableSymbol,
+		NodeJsAbortSignalMessagingTransferSymbol,
+		NodeJsAbortSignalMessagingTransferListSymbol
 	})
 })
 
@@ -1614,36 +1661,7 @@ if (import.meta.vitest) {
 					[Symbol("kAborted") *5]: false
 					[Symbol("kReason") *6]: undefined
 					[Symbol("kComposite") *7]: false
-					<prototype>: {
-						unenumerable constructor: function AbortSignal(0) {
-							unconfigurable unenumerable readonly prototype: .<signal>.<prototype>
-							unenumerable abort(0) {}
-							unenumerable timeout(1) {}
-							unenumerable any(1) {}
-							<prototype>: EventTarget
-						}
-						get aborted(0) {}
-						unenumerable get reason(0) {}
-						unenumerable throwIfAborted(0) {}
-						get onabort(0) {
-							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .<signal>.<prototype>.<get onabort>
-							}
-						}
-						set onabort(1) {
-							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .<signal>.<prototype>.<set onabort>
-							}
-						}
-						unenumerable [Symbol.for("nodejs.util.inspect.custom")](2) {}
-						unenumerable [<NodeJsEventTargetNewListenerSymbol>](7) {}
-						unenumerable [<NodeJsEventTargetRemoveListenerSymbol>](4) {}
-						unenumerable [Symbol("messaging_transfer_symbol") *8](0) {}
-						unenumerable [Symbol("messaging_transfer_list_symbol") *9](0) {}
-						unenumerable [<NodeJsDOMExceptionMessagingDeserializeSymbol>](1) {}
-						unenumerable readonly [Symbol.toStringTag]: "AbortSignal"
-						<prototype>: EventTarget.prototype
-					}
+					<prototype>: AbortSignal.prototype
 				}
 				<body>: null
 				<bodyUsed>: false
