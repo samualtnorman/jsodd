@@ -777,7 +777,8 @@ export const toJsodd = (value: unknown, {
 				}
 
 				const stringifyField = (key: string, value: string | number): void => {
-					o += `\n${indent()}${key}: ${toJsodd(value)}`
+					o += `\n${indent()}${key}: `
+					stringify(value, `${valueName}.${key}`)
 				}
 
 				if (dateTime != undefined)
@@ -1547,9 +1548,9 @@ if (import.meta.vitest) {
 				<method>: "GET"
 				<url>: "https://samual.uk/"
 				<headers>: Headers {
-				<entry 0 key>: "foo"
-				<entry 0 value>: "bar"
-			}
+					<entry 0 key>: "foo"
+					<entry 0 value>: "bar"
+				}
 				<destination>: ""
 				<referrer>: "about:client"
 				<referrerPolicy>: ""
@@ -1562,84 +1563,84 @@ if (import.meta.vitest) {
 				<isReloadNavigation>: false
 				<isHistoryNavigation>: false
 				<signal>: {
-				[Symbol("kEvents") *1]: Map {
-					<prototype>: frozen {
-						unenumerable constructor: frozen function SafeMap(0) {
-							unenumerable prototype: .[Symbol("kEvents") *1].<prototype>
-							unenumerable groupBy: Map.groupBy
-							unenumerable get [Symbol.species]: Map.<get [Symbol.species]>
-							<prototype>: Map
+					[Symbol("kEvents") *1]: Map {
+						<prototype>: frozen {
+							unenumerable constructor: frozen function SafeMap(0) {
+								unenumerable prototype: .<signal>[Symbol("kEvents") *1].<prototype>
+								unenumerable groupBy: Map.groupBy
+								unenumerable get [Symbol.species]: Map.<get [Symbol.species]>
+								<prototype>: Map
+							}
+							unenumerable get: Map.prototype.get
+							unenumerable set: Map.prototype.set
+							unenumerable has: Map.prototype.has
+							unenumerable delete: Map.prototype.delete
+							unenumerable clear: Map.prototype.clear
+							unenumerable entries: function ""(0) {
+								unconfigurable unenumerable prototype: {
+									unenumerable constructor: .<signal>[Symbol("kEvents") *1].<prototype>.entries
+								}
+							}
+							unenumerable forEach: Map.prototype.forEach
+							unenumerable keys: function ""(0) {
+								unconfigurable unenumerable prototype: {
+									unenumerable constructor: .<signal>[Symbol("kEvents") *1].<prototype>.keys
+								}
+							}
+							unenumerable get size: Map.prototype.<get size>
+							unenumerable values: function ""(0) {
+								unconfigurable unenumerable prototype: {
+									unenumerable constructor: .<signal>[Symbol("kEvents") *1].<prototype>.values
+								}
+							}
+							unenumerable [Symbol.toStringTag]: "Map"
+							unenumerable [Symbol.iterator]: function ""(0) {
+								unconfigurable unenumerable prototype: {
+									unenumerable constructor: .<signal>[Symbol("kEvents") *1].<prototype>[Symbol.iterator]
+								}
+							}
+							<prototype>: null
 						}
-						unenumerable get: Map.prototype.get
-						unenumerable set: Map.prototype.set
-						unenumerable has: Map.prototype.has
-						unenumerable delete: Map.prototype.delete
-						unenumerable clear: Map.prototype.clear
-						unenumerable entries: function ""(0) {
+					}
+					[Symbol("events.maxEventTargetListeners") *2]: 0
+					[Symbol("events.maxEventTargetListenersWarned") *3]: false
+					[Symbol("kHandlers") *4]: Map {
+						<prototype>: .<signal>[Symbol("kEvents") *1].<prototype>
+					}
+					[Symbol("kAborted") *5]: false
+					[Symbol("kReason") *6]: undefined
+					[Symbol("kComposite") *7]: false
+					<prototype>: {
+						unenumerable constructor: function AbortSignal(0) {
+							unconfigurable unenumerable readonly prototype: .<signal>.<prototype>
+							unenumerable abort(0) {}
+							unenumerable timeout(1) {}
+							unenumerable any(1) {}
+							<prototype>: EventTarget
+						}
+						get aborted(0) {}
+						unenumerable get reason(0) {}
+						unenumerable throwIfAborted(0) {}
+						get onabort(0) {
 							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.entries
+								unenumerable constructor: .<signal>.<prototype>.<get onabort>
 							}
 						}
-						unenumerable forEach: Map.prototype.forEach
-						unenumerable keys: function ""(0) {
+						set onabort(1) {
 							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.keys
+								unenumerable constructor: .<signal>.<prototype>.<set onabort>
 							}
 						}
-						unenumerable get size: Map.prototype.<get size>
-						unenumerable values: function ""(0) {
-							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>.values
-							}
-						}
-						unenumerable [Symbol.toStringTag]: "Map"
-						unenumerable [Symbol.iterator]: function ""(0) {
-							unconfigurable unenumerable prototype: {
-								unenumerable constructor: .[Symbol("kEvents") *1].<prototype>[Symbol.iterator]
-							}
-						}
-						<prototype>: null
+						unenumerable [Symbol.for("nodejs.util.inspect.custom")](2) {}
+						unenumerable [<NodeJsEventTargetNewListenerSymbol>](7) {}
+						unenumerable [<NodeJsEventTargetRemoveListenerSymbol>](4) {}
+						unenumerable [Symbol("messaging_transfer_symbol") *8](0) {}
+						unenumerable [Symbol("messaging_transfer_list_symbol") *9](0) {}
+						unenumerable [<NodeJsDOMExceptionMessagingDeserializeSymbol>](1) {}
+						unenumerable readonly [Symbol.toStringTag]: "AbortSignal"
+						<prototype>: EventTarget.prototype
 					}
 				}
-				[Symbol("events.maxEventTargetListeners") *2]: 0
-				[Symbol("events.maxEventTargetListenersWarned") *3]: false
-				[Symbol("kHandlers") *4]: Map {
-					<prototype>: .[Symbol("kEvents") *1].<prototype>
-				}
-				[Symbol("kAborted") *5]: false
-				[Symbol("kReason") *6]: undefined
-				[Symbol("kComposite") *7]: false
-				<prototype>: {
-					unenumerable constructor: function AbortSignal(0) {
-						unconfigurable unenumerable readonly prototype: .<prototype>
-						unenumerable abort(0) {}
-						unenumerable timeout(1) {}
-						unenumerable any(1) {}
-						<prototype>: EventTarget
-					}
-					get aborted(0) {}
-					unenumerable get reason(0) {}
-					unenumerable throwIfAborted(0) {}
-					get onabort(0) {
-						unconfigurable unenumerable prototype: {
-							unenumerable constructor: .<prototype>.<get onabort>
-						}
-					}
-					set onabort(1) {
-						unconfigurable unenumerable prototype: {
-							unenumerable constructor: .<prototype>.<set onabort>
-						}
-					}
-					unenumerable [Symbol.for("nodejs.util.inspect.custom")](2) {}
-					unenumerable [<NodeJsEventTargetNewListenerSymbol>](7) {}
-					unenumerable [<NodeJsEventTargetRemoveListenerSymbol>](4) {}
-					unenumerable [Symbol("messaging_transfer_symbol") *8](0) {}
-					unenumerable [Symbol("messaging_transfer_list_symbol") *9](0) {}
-					unenumerable [<NodeJsDOMExceptionMessagingDeserializeSymbol>](1) {}
-					unenumerable readonly [Symbol.toStringTag]: "AbortSignal"
-					<prototype>: EventTarget.prototype
-				}
-			}
 				<body>: null
 				<bodyUsed>: false
 				<duplex>: "half"
