@@ -121,44 +121,44 @@ const getDOMExceptionAttributes = (value: unknown): { name: string, message: str
 		code: domExceptionCodeGetter?.call(value)
 	}))
 
-const requestMethodGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `method`).get
-const requestUrlGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `url`).get
-const requestHeadersGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `headers`).get
-const requestDestinationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `destination`).get
-const requestReferrerGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `referrer`).get
-const requestReferrerPolicyGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `referrerPolicy`).get
-const requestModeGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `mode`).get
-const requestCredentialsGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `credentials`).get
-const requestCacheGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `cache`).get
-const requestRedirectGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `redirect`).get
-const requestIntegrityGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `integrity`).get
-const requestKeepaliveGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `keepalive`).get
-const requestIsReloadNavigationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `isReloadNavigation` as any).get as () => unknown
-const requestIsHistoryNavigationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `isHistoryNavigation` as any).get as () => unknown
-const requestSignalGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `signal`).get
-const requestBodyGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `body`).get
-const requestBodyUsedGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `bodyUsed`).get
-const requestDuplexGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `duplex` as any).get
+const requestMethodGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `method`)?.get
+const requestUrlGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `url`)?.get
+const requestHeadersGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `headers`)?.get
+const requestDestinationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `destination`)?.get
+const requestReferrerGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `referrer`)?.get
+const requestReferrerPolicyGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `referrerPolicy`)?.get
+const requestModeGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `mode`)?.get
+const requestCredentialsGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `credentials`)?.get
+const requestCacheGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `cache`)?.get
+const requestRedirectGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `redirect`)?.get
+const requestIntegrityGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `integrity`)?.get
+const requestKeepaliveGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `keepalive`)?.get
+const requestIsReloadNavigationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `isReloadNavigation` as any)?.get as (() => unknown) | undefined
+const requestIsHistoryNavigationGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `isHistoryNavigation` as any)?.get as (() => unknown) | undefined
+const requestSignalGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `signal`)?.get
+const requestBodyGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `body`)?.get
+const requestBodyUsedGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `bodyUsed`)?.get
+const requestDuplexGetter = Reflect.getOwnPropertyDescriptor(Request.prototype, `duplex` as any)?.get
 
 const getRequestAttributes = (value: unknown) => tryCatch(() => ({
-	method: requestMethodGetter?.call(value),
-	url: requestUrlGetter?.call(value),
-	headers: requestHeadersGetter?.call(value),
-	destination: requestDestinationGetter?.call(value),
-	referrer: requestReferrerGetter?.call(value),
-	referrerPolicy: requestReferrerPolicyGetter?.call(value),
-	mode: requestModeGetter?.call(value),
-	credentials: requestCredentialsGetter?.call(value),
-	cache: requestCacheGetter?.call(value),
-	redirect: requestRedirectGetter?.call(value),
-	integrity: requestIntegrityGetter?.call(value),
-	keepalive: requestKeepaliveGetter?.call(value),
-	isReloadNavigation: requestIsReloadNavigationGetter?.call(value),
-	isHistoryNavigation: requestIsHistoryNavigationGetter?.call(value),
-	signal: requestSignalGetter?.call(value),
-	body: requestBodyGetter?.call(value),
-	bodyUsed: requestBodyUsedGetter?.call(value),
-	duplex: requestDuplexGetter?.call(value)
+	...requestMethodGetter && { method: requestMethodGetter.call(value) },
+	...requestUrlGetter && { url: requestUrlGetter.call(value) },
+	...requestHeadersGetter && { headers: requestHeadersGetter.call(value) },
+	...requestDestinationGetter && { destination: requestDestinationGetter.call(value) },
+	...requestReferrerGetter && { referrer: requestReferrerGetter.call(value) },
+	...requestReferrerPolicyGetter && { referrerPolicy: requestReferrerPolicyGetter.call(value) },
+	...requestModeGetter && { mode: requestModeGetter.call(value) },
+	...requestCredentialsGetter && { credentials: requestCredentialsGetter.call(value) },
+	...requestCacheGetter && { cache: requestCacheGetter.call(value) },
+	...requestRedirectGetter && { redirect: requestRedirectGetter.call(value) },
+	...requestIntegrityGetter && { integrity: requestIntegrityGetter.call(value) },
+	...requestKeepaliveGetter && { keepalive: requestKeepaliveGetter.call(value) },
+	...requestIsReloadNavigationGetter && { isReloadNavigation: requestIsReloadNavigationGetter.call(value) },
+	...requestIsHistoryNavigationGetter && { isHistoryNavigation: requestIsHistoryNavigationGetter.call(value) },
+	...requestSignalGetter && { signal: requestSignalGetter.call(value) },
+	...requestBodyGetter && { body: requestBodyGetter.call(value) },
+	...requestBodyUsedGetter && { bodyUsed: requestBodyUsedGetter.call(value) },
+	...requestDuplexGetter && { duplex: requestDuplexGetter.call(value) }
 }))
 
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
