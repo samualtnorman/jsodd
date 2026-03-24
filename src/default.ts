@@ -185,6 +185,20 @@ const getRequestAttributes = (value: unknown) => tryCatch(() => ({
 	...requestDuplexGetter && { duplex: requestDuplexGetter.call(value) }
 }))
 
+const promiseRejectionEventPromiseGetter = typeof PromiseRejectionEvent == `function`
+	? getGetter(PromiseRejectionEvent.prototype, `promise`)
+	: undefined
+
+const promiseRejectionEventReasonGetter = typeof PromiseRejectionEvent == `function`
+	? getGetter(PromiseRejectionEvent.prototype, `reason`)
+	: undefined
+
+const getPromiseRejectionEventAttributes = (value: unknown) =>
+	(promiseRejectionEventPromiseGetter || promiseRejectionEventReasonGetter) && tryCatch(() => ({
+		...promiseRejectionEventPromiseGetter && { promise: promiseRejectionEventPromiseGetter.call(value) },
+		...promiseRejectionEventReasonGetter && { reason: promiseRejectionEventReasonGetter.call(value) },
+	}))
+
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
 
 const symbolToJsodd = (symbol: symbol, friendlyNames: FriendlyNames, valueName?: string): string => {
@@ -464,6 +478,180 @@ const builtinFriendlyNames = mapFriendlyNames({
 	Request,
 	Response,
 
+	// HTML DOM API (https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API#html_dom_api_interfaces)
+		// HTML element interfaces
+		...typeof HTMLAnchorElement != `undefined` && { HTMLAnchorElement },
+		...typeof HTMLAreaElement != `undefined` && { HTMLAreaElement },
+		...typeof HTMLAudioElement != `undefined` && { HTMLAudioElement },
+		...typeof HTMLBaseElement != `undefined` && { HTMLBaseElement },
+		...typeof HTMLBodyElement != `undefined` && { HTMLBodyElement },
+		...typeof HTMLBRElement != `undefined` && { HTMLBRElement },
+		...typeof HTMLButtonElement != `undefined` && { HTMLButtonElement },
+		...typeof HTMLCanvasElement != `undefined` && { HTMLCanvasElement },
+		...typeof HTMLDataElement != `undefined` && { HTMLDataElement },
+		...typeof HTMLDataListElement != `undefined` && { HTMLDataListElement },
+		...typeof HTMLDetailsElement != `undefined` && { HTMLDetailsElement },
+		...typeof HTMLDialogElement != `undefined` && { HTMLDialogElement },
+		...typeof HTMLDirectoryElement != `undefined` && { HTMLDirectoryElement },
+		...typeof HTMLDivElement != `undefined` && { HTMLDivElement },
+		...typeof HTMLDListElement != `undefined` && { HTMLDListElement },
+		...typeof HTMLElement != `undefined` && { HTMLElement },
+		...typeof HTMLEmbedElement != `undefined` && { HTMLEmbedElement },
+		...typeof HTMLFieldSetElement != `undefined` && { HTMLFieldSetElement },
+		...typeof HTMLFormElement != `undefined` && { HTMLFormElement },
+		...typeof HTMLHRElement != `undefined` && { HTMLHRElement },
+		...typeof HTMLHeadElement != `undefined` && { HTMLHeadElement },
+		...typeof HTMLHeadingElement != `undefined` && { HTMLHeadingElement },
+		...typeof HTMLHtmlElement != `undefined` && { HTMLHtmlElement },
+		...typeof HTMLIFrameElement != `undefined` && { HTMLIFrameElement },
+		...typeof HTMLImageElement != `undefined` && { HTMLImageElement },
+		...typeof HTMLInputElement != `undefined` && { HTMLInputElement },
+		...typeof HTMLLabelElement != `undefined` && { HTMLLabelElement },
+		...typeof HTMLLegendElement != `undefined` && { HTMLLegendElement },
+		...typeof HTMLLIElement != `undefined` && { HTMLLIElement },
+		...typeof HTMLLinkElement != `undefined` && { HTMLLinkElement },
+		...typeof HTMLMapElement != `undefined` && { HTMLMapElement },
+		...typeof HTMLMediaElement != `undefined` && { HTMLMediaElement },
+		...typeof HTMLMenuElement != `undefined` && { HTMLMenuElement },
+		...typeof HTMLMetaElement != `undefined` && { HTMLMetaElement },
+		...typeof HTMLMeterElement != `undefined` && { HTMLMeterElement },
+		...typeof HTMLModElement != `undefined` && { HTMLModElement },
+		...typeof HTMLObjectElement != `undefined` && { HTMLObjectElement },
+		...typeof HTMLOListElement != `undefined` && { HTMLOListElement },
+		...typeof HTMLOptGroupElement != `undefined` && { HTMLOptGroupElement },
+		...typeof HTMLOptionElement != `undefined` && { HTMLOptionElement },
+		...typeof HTMLOutputElement != `undefined` && { HTMLOutputElement },
+		...typeof HTMLParagraphElement != `undefined` && { HTMLParagraphElement },
+		...typeof HTMLPictureElement != `undefined` && { HTMLPictureElement },
+		...typeof HTMLPreElement != `undefined` && { HTMLPreElement },
+		...typeof HTMLProgressElement != `undefined` && { HTMLProgressElement },
+		...typeof HTMLQuoteElement != `undefined` && { HTMLQuoteElement },
+		...typeof HTMLScriptElement != `undefined` && { HTMLScriptElement },
+		...typeof HTMLSelectElement != `undefined` && { HTMLSelectElement },
+		...typeof HTMLSlotElement != `undefined` && { HTMLSlotElement },
+		...typeof HTMLSourceElement != `undefined` && { HTMLSourceElement },
+		...typeof HTMLSpanElement != `undefined` && { HTMLSpanElement },
+		...typeof HTMLStyleElement != `undefined` && { HTMLStyleElement },
+		...typeof HTMLTableCaptionElement != `undefined` && { HTMLTableCaptionElement },
+		...typeof HTMLTableCellElement != `undefined` && { HTMLTableCellElement },
+		...typeof HTMLTableColElement != `undefined` && { HTMLTableColElement },
+		...typeof HTMLTableElement != `undefined` && { HTMLTableElement },
+		...typeof HTMLTableRowElement != `undefined` && { HTMLTableRowElement },
+		...typeof HTMLTableSectionElement != `undefined` && { HTMLTableSectionElement },
+		...typeof HTMLTemplateElement != `undefined` && { HTMLTemplateElement },
+		...typeof HTMLTextAreaElement != `undefined` && { HTMLTextAreaElement },
+		...typeof HTMLTimeElement != `undefined` && { HTMLTimeElement },
+		...typeof HTMLTitleElement != `undefined` && { HTMLTitleElement },
+		...typeof HTMLTrackElement != `undefined` && { HTMLTrackElement },
+		...typeof HTMLUListElement != `undefined` && { HTMLUListElement },
+		...typeof HTMLUnknownElement != `undefined` && { HTMLUnknownElement },
+		...typeof HTMLVideoElement != `undefined` && { HTMLVideoElement },
+
+		// Deprecated HTML Element Interfaces
+		...typeof HTMLMarqueeElement != `undefined` && { HTMLMarqueeElement },
+
+		// Obsolete HTML Element Interfaces
+		...typeof HTMLFontElement != `undefined` && { HTMLFontElement },
+		...typeof HTMLFrameElement != `undefined` && { HTMLFrameElement },
+		...typeof HTMLFrameSetElement != `undefined` && { HTMLFrameSetElement },
+
+		// Web app and browser integration interfaces
+		...typeof BarProp != `undefined` && { BarProp },
+		...typeof Navigator != `undefined` && { Navigator },
+		...typeof Window != `undefined` && { Window },
+
+		// Deprecated web app and browser integration interfaces
+		...typeof External != `undefined` && { External },
+
+		// Obsolete web app and browser integration interfaces
+		...typeof Plugin != `undefined` && { Plugin },
+		...typeof PluginArray != `undefined` && { PluginArray },
+
+		// Form support interfaces
+		...typeof FormDataEvent != `undefined` && { FormDataEvent },
+		...typeof HTMLFormControlsCollection != `undefined` && { HTMLFormControlsCollection },
+		...typeof HTMLOptionsCollection != `undefined` && { HTMLOptionsCollection },
+		...typeof RadioNodeList != `undefined` && { RadioNodeList },
+		...typeof ValidityState != `undefined` && { ValidityState },
+
+		// Canvas and image interfaces
+		...typeof CanvasGradient != `undefined` && { CanvasGradient },
+		...typeof CanvasPattern != `undefined` && { CanvasPattern },
+		...typeof CanvasRenderingContext2D != `undefined` && { CanvasRenderingContext2D },
+		...typeof ImageBitmap != `undefined` && { ImageBitmap },
+		...typeof ImageBitmapRenderingContext != `undefined` && { ImageBitmapRenderingContext },
+		...typeof ImageData != `undefined` && { ImageData },
+		...typeof OffscreenCanvas != `undefined` && { OffscreenCanvas },
+		...typeof OffscreenCanvasRenderingContext2D != `undefined` && { OffscreenCanvasRenderingContext2D },
+		...typeof Path2D != `undefined` && { Path2D },
+		...typeof TextMetrics != `undefined` && { TextMetrics },
+
+		// Media interfaces
+		...typeof AudioTrack != `undefined` && { AudioTrack },
+		...typeof AudioTrackList != `undefined` && { AudioTrackList },
+		...typeof MediaError != `undefined` && { MediaError },
+		...typeof TextTrack != `undefined` && { TextTrack },
+		...typeof TextTrackCue != `undefined` && { TextTrackCue },
+		...typeof TextTrackCueList != `undefined` && { TextTrackCueList },
+		...typeof TextTrackList != `undefined` && { TextTrackList },
+		...typeof TimeRanges != `undefined` && { TimeRanges },
+		...typeof TrackEvent != `undefined` && { TrackEvent },
+		...typeof VideoTrack != `undefined` && { VideoTrack },
+		...typeof VideoTrackList != `undefined` && { VideoTrackList },
+
+		// Drag and drop interfaces
+		...typeof DataTransfer != `undefined` && { DataTransfer },
+		...typeof DataTransferItem != `undefined` && { DataTransferItem },
+		...typeof DataTransferItemList != `undefined` && { DataTransferItemList },
+		...typeof DragEvent != `undefined` && { DragEvent },
+
+		// Page history interfaces
+		...typeof BeforeUnloadEvent != `undefined` && { BeforeUnloadEvent },
+		...typeof HashChangeEvent != `undefined` && { HashChangeEvent },
+		...typeof History != `undefined` && { History },
+		...typeof Location != `undefined` && { Location },
+		...typeof PageRevealEvent != `undefined` && { PageRevealEvent },
+		...typeof PageSwapEvent != `undefined` && { PageSwapEvent },
+		...typeof PageTransitionEvent != `undefined` && { PageTransitionEvent },
+		...typeof PopStateEvent != `undefined` && { PopStateEvent },
+
+		// Web Components interfaces
+		...typeof CustomElementRegistry != `undefined` && { CustomElementRegistry },
+
+		// Miscellaneous and supporting interfaces
+		...typeof DOMStringList != `undefined` && { DOMStringList },
+		...typeof DOMStringMap != `undefined` && { DOMStringMap },
+		...typeof ErrorEvent != `undefined` && { ErrorEvent },
+		...typeof HTMLAllCollection != `undefined` && { HTMLAllCollection },
+		...typeof MimeType != `undefined` && { MimeType },
+		...typeof MimeTypeArray != `undefined` && { MimeTypeArray },
+		...typeof PromiseRejectionEvent != `undefined` && { PromiseRejectionEvent },
+
+		// Interfaces belonging to other APIs
+			// Web storage interfaces
+			...typeof Storage != `undefined` && { Storage },
+			...typeof StorageEvent != `undefined` && { StorageEvent },
+
+			// Web Workers interfaces
+			...typeof BroadcastChannel != `undefined` && { BroadcastChannel },
+			...typeof DedicatedWorkerGlobalScope != `undefined` && { DedicatedWorkerGlobalScope },
+			...typeof MessageChannel != `undefined` && { MessageChannel },
+			...typeof MessageEvent != `undefined` && { MessageEvent },
+			...typeof MessagePort != `undefined` && { MessagePort },
+			...typeof SharedWorker != `undefined` && { SharedWorker },
+			...typeof SharedWorkerGlobalScope != `undefined` && { SharedWorkerGlobalScope },
+			...typeof Worker != `undefined` && { Worker },
+			...typeof WorkerGlobalScope != `undefined` && { WorkerGlobalScope },
+			...typeof WorkerLocation != `undefined` && { WorkerLocation },
+			...typeof WorkerNavigator != `undefined` && { WorkerNavigator },
+
+			// WebSocket interfaces
+			...typeof CloseEvent != `undefined` && { CloseEvent },
+			...typeof WebSocket != `undefined` && { WebSocket },
+
+			// Server-sent events interfaces
+			...typeof EventSource != `undefined` && { EventSource },
+
 	...angleNames({
 		TypedArray,
 		GeneratorFunction,
@@ -717,6 +905,11 @@ export const toJsodd = (value: unknown, {
 				if (requestAttributes)
 					o += `Request `
 
+				const promiseRejectionEventAttributes = getPromiseRejectionEventAttributes(value)
+
+				if (promiseRejectionEventAttributes)
+					o += `PromiseRejectionEvent `
+
 				const isArray = Array.isArray(value) || typedArrayAttributes
 
 				o += isArray ? `[` : `{`
@@ -878,6 +1071,11 @@ export const toJsodd = (value: unknown, {
 						stringifyField(`<${key}>`, value)
 				}
 
+				if (promiseRejectionEventAttributes) {
+					for (const [ key, value ] of Object.entries(promiseRejectionEventAttributes))
+						stringifyField(`<${key}>`, value)
+				}
+
 				const prototype = getPrototype(value)
 
 				const expectedPrototype =
@@ -942,6 +1140,8 @@ export const toJsodd = (value: unknown, {
 						Headers.prototype
 					: requestAttributes ?
 						Request.prototype
+					: promiseRejectionEventAttributes ?
+						PromiseRejectionEvent.prototype
 					: Object.prototype
 
 				if (prototype != expectedPrototype) {
@@ -958,7 +1158,7 @@ export const toJsodd = (value: unknown, {
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
 					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue ||
 					domExceptionAttributes || dateTime != undefined || blobAttributes || headersEntries?.length ||
-					requestAttributes
+					requestAttributes || promiseRejectionEventAttributes
 				)
 					o += `\n${indent()}`
 
