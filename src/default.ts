@@ -857,7 +857,7 @@ export const toJsodd = (value: unknown, {
 				if (isWeakRef)
 					o += `WeakRef `
 
-				const isPromise = tryCatch(() => !!Promise.prototype.finally.call(value), () => false)
+				const isPromise = tryCatch(() => !!Promise.prototype.then.call(value).catch(), () => false)
 
 				if (isPromise)
 					o += `Promise `
