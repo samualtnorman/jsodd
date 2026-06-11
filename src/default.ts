@@ -13,8 +13,14 @@ const isActuallyFrozen = (target: object) => !Reflect.isExtensible(target) && Re
 
 const getPrototype = Reflect.getPrototypeOf
 
-const getGetter = <T extends object, TKey extends keyof any>(target: T, key: TKey) =>
-	Reflect.getOwnPropertyDescriptor(target, key as any)?.get as TKey extends keyof T ? (() => T[TKey]) | undefined : (() => unknown) | undefined
+const normaliseGetter = <T>(getter: () => T) => (value: any) => getter.call(value)
+
+const getGetter = <T extends object, TKey extends keyof any>(target: T, key: TKey) => {
+	const getter = Reflect.getOwnPropertyDescriptor(target, key as any)?.get
+
+	if (getter)
+		return normaliseGetter(getter) as TKey extends keyof T ? ((v: any) => T[TKey]) | undefined : ((v: any) => unknown) | undefined
+}
 
 const TypedArray = getPrototype(Uint8Array) as {
 	prototype: { buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, [Symbol.toStringTag]: string }
@@ -36,30 +42,30 @@ const SegmentsIteratorPrototype = getPrototype(segments[Symbol.iterator]())!
 const IteratorHelperPrototype = (arrayIterator.map && getPrototype(arrayIterator.map(_ => _))!) as object | undefined
 const WrapForValidIteratorPrototype = typeof Iterator == `function` ? getPrototype(Iterator.from({} as any))! : undefined
 
-const regExpSourceGetter = getGetter(RegExp.prototype, `source`)
-const regExpFlagsGetter = getGetter(RegExp.prototype, `flags`)
+const RegExpGetSource = getGetter(RegExp.prototype, `source`)
+const RegExpGetFlags = getGetter(RegExp.prototype, `flags`)
 const v8ErrorStackDescriptor = Reflect.getOwnPropertyDescriptor(Error(), `stack`) as PropertyDescriptor<string | undefined> | undefined
-const errorStackGetter = v8ErrorStackDescriptor?.get || getGetter(Error.prototype, `stack`)
-const arrayBufferByteLengthGetter = getGetter(ArrayBuffer.prototype, `byteLength`)
+const ErrorGetStack = v8ErrorStackDescriptor?.get ? normaliseGetter(v8ErrorStackDescriptor.get) : getGetter(Error.prototype, `stack`)
+const ArrayBufferGetByteLength = getGetter(ArrayBuffer.prototype, `byteLength`)
 
-const sharedArrayBufferByteLengthGetter = typeof SharedArrayBuffer == `function`
+const SharedArrayBufferGetByteLength = typeof SharedArrayBuffer == `function`
 	? getGetter(SharedArrayBuffer.prototype, `byteLength`)
 	: undefined
 
-const dataViewBufferGetter = getGetter(DataView.prototype, `buffer`)
-const dataViewByteLengthGetter = getGetter(DataView.prototype, `byteLength`)
-const dataViewByteOffsetGetter = getGetter(DataView.prototype, `byteOffset`)
+const DataViewGetBuffer = getGetter(DataView.prototype, `buffer`)
+const DataViewGetByteLength = getGetter(DataView.prototype, `byteLength`)
+const DataViewGetByteOffset = getGetter(DataView.prototype, `byteOffset`)
 
-const getRegexSource = (regex: unknown): string | undefined => regExpSourceGetter && regExpFlagsGetter && tryCatch(() => `/${regExpSourceGetter.call(regex)}/${regExpFlagsGetter.call(regex)}`)
-const getErrorStack = (error: unknown): string | undefined => tryCatch(() => errorStackGetter?.call(error))
-const getArrayBufferByteLength = (value: unknown): number | undefined => arrayBufferByteLengthGetter && tryCatch(() => arrayBufferByteLengthGetter.call(value))
-const getSharedArrayBufferByteLength = (value: unknown) => tryCatch(() => sharedArrayBufferByteLengthGetter?.call(value) as number | undefined)
+const getRegexSource = (regex: unknown): string | undefined => RegExpGetSource && RegExpGetFlags && tryCatch(() => `/${RegExpGetSource(regex)}/${RegExpGetFlags(regex)}`)
+const getErrorStack = (error: unknown): string | undefined => tryCatch(() => ErrorGetStack?.(error))
+const getArrayBufferByteLength = (value: unknown): number | undefined => ArrayBufferGetByteLength && tryCatch(() => ArrayBufferGetByteLength(value))
+const getSharedArrayBufferByteLength = (value: unknown) => tryCatch(() => SharedArrayBufferGetByteLength?.(value) as number | undefined)
 
-const typedArrayBufferGetter = getGetter(TypedArray.prototype, `buffer`)
-const typedArrayByteLengthGetter = getGetter(TypedArray.prototype, "byteLength")
-const typedArrayByteOffsetGetter = getGetter(TypedArray.prototype, "byteOffset")
-const typedArrayLengthGetter = getGetter(TypedArray.prototype, "length")
-const typedArrayTagGetter = getGetter(TypedArray.prototype, Symbol.toStringTag)
+const TypedArrayGetBuffer = getGetter(TypedArray.prototype, `buffer`)
+const TypedArrayGetByteLength = getGetter(TypedArray.prototype, "byteLength")
+const TypedArrayGetByteOffset = getGetter(TypedArray.prototype, "byteOffset")
+const TypedArrayGetLength = getGetter(TypedArray.prototype, "length")
+const TypedArrayGetTag = getGetter(TypedArray.prototype, Symbol.toStringTag)
 
 const emptyBlob: any = new Blob
 const nodeBlobSymbolKeys = Object.getOwnPropertySymbols(emptyBlob)
@@ -67,14 +73,14 @@ const NodeJsBlobHandleSymbol = nodeBlobSymbolKeys.find(symbol => symbol.descript
 const NodeJsBlobLengthSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kLength`)
 const NodeJsBlobTypeSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kType`)
 const NodeJsInternalBlob: object | undefined = NodeJsBlobHandleSymbol && emptyBlob[NodeJsBlobHandleSymbol].constructor
-const blobTypeGetter = getGetter(Blob.prototype, `type`)
-const blobSizeGetter = getGetter(Blob.prototype, `size`)
+const BlobGetType = getGetter(Blob.prototype, `type`)
+const BlobGetSize = getGetter(Blob.prototype, `size`)
 const emptyFile: any = new File([], ``)
 const NodeJsFileStateSymbol = Object.getOwnPropertySymbols(emptyFile).find(symbol => symbol.description == `state`)
 const NodeJsFileState: object | undefined = NodeJsFileStateSymbol && emptyFile[NodeJsFileStateSymbol].constructor
-const fileNameGetter = getGetter(File.prototype, `name`)
-const fileLastModifiedGetter = getGetter(File.prototype, `lastModified`)
-const fileWebkitRelativePath = getGetter(File.prototype, `webkitRelativePath`)
+const FileGetName = getGetter(File.prototype, `name`)
+const FileGetLastModified = getGetter(File.prototype, `lastModified`)
+const FileGetWebkitRelativePath = getGetter(File.prototype, `webkitRelativePath`)
 
 const domExceptionPrototypeSymbolKeys = Object.getOwnPropertySymbols(DOMException.prototype)
 const NodeJsDOMExceptionMessagingCloneSymbol = domExceptionPrototypeSymbolKeys.find(symbol => symbol.description == `messaging_clone_symbol`)
@@ -102,94 +108,94 @@ const NodeJsEventTargetHandlersSymbol = eventTargetInstanceSymbolKeys.find(symbo
 const NodeJsSafeMap: object | undefined = NodeJsEventTargetEventsSymbol && (eventTarget as any)[NodeJsEventTargetEventsSymbol]?.constructor
 
 const getBlobAttributes = (value: unknown): { size: number, type: string } | undefined =>
-	blobSizeGetter && blobTypeGetter &&
-	tryCatch(() => ({ size: blobSizeGetter.call(value), type: blobTypeGetter.call(value) }))
+	BlobGetSize && BlobGetType &&
+	tryCatch(() => ({ size: BlobGetSize(value), type: BlobGetType(value) }))
 
 const getFileAttributes = (value: unknown): { size: number, type: string, lastModified: number, name: string, webkitRelativePath?: string } | undefined =>
-	blobSizeGetter && blobTypeGetter && fileLastModifiedGetter && fileNameGetter &&
+	BlobGetSize && BlobGetType && FileGetLastModified && FileGetName &&
 	tryCatch(() => ({
-		size: blobSizeGetter.call(value),
-		type: blobTypeGetter.call(value),
-		lastModified: fileLastModifiedGetter.call(value),
-		name: fileNameGetter.call(value),
-		...fileWebkitRelativePath && { webkitRelativePath: fileWebkitRelativePath.call(value) }
+		size: BlobGetSize(value),
+		type: BlobGetType(value),
+		lastModified: FileGetLastModified(value),
+		name: FileGetName(value),
+		...FileGetWebkitRelativePath && { webkitRelativePath: FileGetWebkitRelativePath(value) }
 	}))
 
 const getTypedArrayAttributes = (value: unknown):
 	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, tag: string } | undefined =>
-	typedArrayBufferGetter && typedArrayByteLengthGetter && typedArrayByteOffsetGetter && typedArrayLengthGetter &&
-		typedArrayTagGetter && tryCatch(() => ({
-			buffer: typedArrayBufferGetter.call(value),
-			byteLength: typedArrayByteLengthGetter.call(value),
-			byteOffset: typedArrayByteOffsetGetter.call(value),
-			length: typedArrayLengthGetter.call(value),
-			tag: typedArrayTagGetter.call(value)
+	TypedArrayGetBuffer && TypedArrayGetByteLength && TypedArrayGetByteOffset && TypedArrayGetLength &&
+		TypedArrayGetTag && tryCatch(() => ({
+			buffer: TypedArrayGetBuffer(value),
+			byteLength: TypedArrayGetByteLength(value),
+			byteOffset: TypedArrayGetByteOffset(value),
+			length: TypedArrayGetLength(value),
+			tag: TypedArrayGetTag(value)
 		}))
 
 const getDataViewAttributes = (value: unknown):
 	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number } | undefined =>
-	dataViewBufferGetter && dataViewByteLengthGetter && dataViewByteOffsetGetter && tryCatch(() => ({
-		buffer: dataViewBufferGetter.call(value),
-		byteLength: dataViewByteLengthGetter.call(value),
-		byteOffset: dataViewByteOffsetGetter.call(value)
+	DataViewGetBuffer && DataViewGetByteLength && DataViewGetByteOffset && tryCatch(() => ({
+		buffer: DataViewGetBuffer(value),
+		byteLength: DataViewGetByteLength(value),
+		byteOffset: DataViewGetByteOffset(value)
 	}))
 
-const domExceptionNameGetter = getGetter(DOMException.prototype, `name`)
-const domExceptionMessageGetter = getGetter(DOMException.prototype, `message`)
-const domExceptionCodeGetter = getGetter(DOMException.prototype, `code`)
+const DomExceptionGetName = getGetter(DOMException.prototype, `name`)
+const DomExceptionGetMessage = getGetter(DOMException.prototype, `message`)
+const DomExceptionGetCode = getGetter(DOMException.prototype, `code`)
 
 const getDOMExceptionAttributes = (value: unknown): { name: string, message: string, code?: number } | undefined =>
-	domExceptionNameGetter && domExceptionMessageGetter && tryCatch(() => ({
-		name: domExceptionNameGetter.call(value),
-		message: domExceptionMessageGetter.call(value),
-		...domExceptionCodeGetter && { code: domExceptionCodeGetter.call(value) }
+	DomExceptionGetName && DomExceptionGetMessage && tryCatch(() => ({
+		name: DomExceptionGetName(value),
+		message: DomExceptionGetMessage(value),
+		...DomExceptionGetCode && { code: DomExceptionGetCode(value) }
 	}))
 
-const requestMethodGetter = getGetter(Request.prototype, `method`)
-const requestUrlGetter = getGetter(Request.prototype, `url`)
-const requestHeadersGetter = getGetter(Request.prototype, `headers`)
-const requestDestinationGetter = getGetter(Request.prototype, `destination`)
-const requestReferrerGetter = getGetter(Request.prototype, `referrer`)
-const requestReferrerPolicyGetter = getGetter(Request.prototype, `referrerPolicy`)
-const requestModeGetter = getGetter(Request.prototype, `mode`)
-const requestCredentialsGetter = getGetter(Request.prototype, `credentials`)
-const requestCacheGetter = getGetter(Request.prototype, `cache`)
-const requestRedirectGetter = getGetter(Request.prototype, `redirect`)
-const requestIntegrityGetter = getGetter(Request.prototype, `integrity`)
-const requestKeepaliveGetter = getGetter(Request.prototype, `keepalive`)
-const requestIsReloadNavigationGetter = getGetter(Request.prototype, `isReloadNavigation`)
-const requestIsHistoryNavigationGetter = getGetter(Request.prototype, `isHistoryNavigation`)
-const requestSignalGetter = getGetter(Request.prototype, `signal`)
-const requestBodyGetter = getGetter(Request.prototype, `body`)
-const requestBodyUsedGetter = getGetter(Request.prototype, `bodyUsed`)
-const requestDuplexGetter = getGetter(Request.prototype, `duplex`)
+const RequestGetMethod = getGetter(Request.prototype, `method`)
+const RequestGetUrl = getGetter(Request.prototype, `url`)
+const RequestGetHeaders = getGetter(Request.prototype, `headers`)
+const RequestGetDestination = getGetter(Request.prototype, `destination`)
+const RequestGetReferrer = getGetter(Request.prototype, `referrer`)
+const RequestGetReferrerPolicy = getGetter(Request.prototype, `referrerPolicy`)
+const RequestGetMode = getGetter(Request.prototype, `mode`)
+const RequestGetCredentials = getGetter(Request.prototype, `credentials`)
+const RequestGetCache = getGetter(Request.prototype, `cache`)
+const RequestGetRedirect = getGetter(Request.prototype, `redirect`)
+const RequestGetIntegrity = getGetter(Request.prototype, `integrity`)
+const RequestGetKeepalive = getGetter(Request.prototype, `keepalive`)
+const RequestGetIsReloadNavigation = getGetter(Request.prototype, `isReloadNavigation`)
+const RequestGetIsHistoryNavigation = getGetter(Request.prototype, `isHistoryNavigation`)
+const RequestGetSignal = getGetter(Request.prototype, `signal`)
+const RequestGetBody = getGetter(Request.prototype, `body`)
+const RequestBodyUsed = getGetter(Request.prototype, `bodyUsed`)
+const RequestGetDuplex = getGetter(Request.prototype, `duplex`)
 
 const getRequestAttributes = (value: unknown) => tryCatch(() => ({
-	...requestMethodGetter && { method: requestMethodGetter.call(value) },
-	...requestUrlGetter && { url: requestUrlGetter.call(value) },
-	...requestHeadersGetter && { headers: requestHeadersGetter.call(value) },
-	...requestDestinationGetter && { destination: requestDestinationGetter.call(value) },
-	...requestReferrerGetter && { referrer: requestReferrerGetter.call(value) },
-	...requestReferrerPolicyGetter && { referrerPolicy: requestReferrerPolicyGetter.call(value) },
-	...requestModeGetter && { mode: requestModeGetter.call(value) },
-	...requestCredentialsGetter && { credentials: requestCredentialsGetter.call(value) },
-	...requestCacheGetter && { cache: requestCacheGetter.call(value) },
-	...requestRedirectGetter && { redirect: requestRedirectGetter.call(value) },
-	...requestIntegrityGetter && { integrity: requestIntegrityGetter.call(value) },
-	...requestKeepaliveGetter && { keepalive: requestKeepaliveGetter.call(value) },
-	...requestIsReloadNavigationGetter && { isReloadNavigation: requestIsReloadNavigationGetter.call(value) },
-	...requestIsHistoryNavigationGetter && { isHistoryNavigation: requestIsHistoryNavigationGetter.call(value) },
-	...requestSignalGetter && { signal: requestSignalGetter.call(value) },
-	...requestBodyGetter && { body: requestBodyGetter.call(value) },
-	...requestBodyUsedGetter && { bodyUsed: requestBodyUsedGetter.call(value) },
-	...requestDuplexGetter && { duplex: requestDuplexGetter.call(value) }
+	...RequestGetMethod && { method: RequestGetMethod(value) },
+	...RequestGetUrl && { url: RequestGetUrl(value) },
+	...RequestGetHeaders && { headers: RequestGetHeaders(value) },
+	...RequestGetDestination && { destination: RequestGetDestination(value) },
+	...RequestGetReferrer && { referrer: RequestGetReferrer(value) },
+	...RequestGetReferrerPolicy && { referrerPolicy: RequestGetReferrerPolicy(value) },
+	...RequestGetMode && { mode: RequestGetMode(value) },
+	...RequestGetCredentials && { credentials: RequestGetCredentials(value) },
+	...RequestGetCache && { cache: RequestGetCache(value) },
+	...RequestGetRedirect && { redirect: RequestGetRedirect(value) },
+	...RequestGetIntegrity && { integrity: RequestGetIntegrity(value) },
+	...RequestGetKeepalive && { keepalive: RequestGetKeepalive(value) },
+	...RequestGetIsReloadNavigation && { isReloadNavigation: RequestGetIsReloadNavigation(value) },
+	...RequestGetIsHistoryNavigation && { isHistoryNavigation: RequestGetIsHistoryNavigation(value) },
+	...RequestGetSignal && { signal: RequestGetSignal(value) },
+	...RequestGetBody && { body: RequestGetBody(value) },
+	...RequestBodyUsed && { bodyUsed: RequestBodyUsed(value) },
+	...RequestGetDuplex && { duplex: RequestGetDuplex(value) }
 }))
 
-const promiseRejectionEventPromiseGetter = typeof PromiseRejectionEvent == `function`
+const PromiseRejectionEventGetPromise = typeof PromiseRejectionEvent == `function`
 	? getGetter(PromiseRejectionEvent.prototype, `promise`)
 	: undefined
 
-const promiseRejectionEventReasonGetter = typeof PromiseRejectionEvent == `function`
+const PromiseRejectionEventGetReason = typeof PromiseRejectionEvent == `function`
 	? getGetter(PromiseRejectionEvent.prototype, `reason`)
 	: undefined
 
@@ -208,9 +214,9 @@ const suppressUncaughtReject = <T>(value: T) => {
 }
 
 const getPromiseRejectionEventAttributes = (value: unknown) =>
-	(promiseRejectionEventPromiseGetter || promiseRejectionEventReasonGetter) && tryCatch(() => ({
-		...promiseRejectionEventPromiseGetter && { promise: suppressUncaughtReject(promiseRejectionEventPromiseGetter.call(value)) },
-		...promiseRejectionEventReasonGetter && { reason: promiseRejectionEventReasonGetter.call(value) },
+	(PromiseRejectionEventGetPromise || PromiseRejectionEventGetReason) && tryCatch(() => ({
+		...PromiseRejectionEventGetPromise && { promise: suppressUncaughtReject(PromiseRejectionEventGetPromise(value)) },
+		...PromiseRejectionEventGetReason && { reason: PromiseRejectionEventGetReason(value) },
 	}))
 
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
