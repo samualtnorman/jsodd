@@ -193,9 +193,23 @@ const promiseRejectionEventReasonGetter = typeof PromiseRejectionEvent == `funct
 	? getGetter(PromiseRejectionEvent.prototype, `reason`)
 	: undefined
 
+const PromiseThen =
+	(...args: [ target: any, onResolve?: (value: any) => any, onReject?: (value: any) => any ]): Promise<unknown> =>
+		Promise.prototype.then.call(...args)
+
+const nop = () => {}
+
+const suppressUncaughtReject = <T>(value: T) => {
+	try {
+		PromiseThen(value, undefined, nop)
+	} catch {}
+
+	return value
+}
+
 const getPromiseRejectionEventAttributes = (value: unknown) =>
 	(promiseRejectionEventPromiseGetter || promiseRejectionEventReasonGetter) && tryCatch(() => ({
-		...promiseRejectionEventPromiseGetter && { promise: promiseRejectionEventPromiseGetter.call(value) },
+		...promiseRejectionEventPromiseGetter && { promise: suppressUncaughtReject(promiseRejectionEventPromiseGetter.call(value)) },
 		...promiseRejectionEventReasonGetter && { reason: promiseRejectionEventReasonGetter.call(value) },
 	}))
 
@@ -857,7 +871,7 @@ export const toJsodd = (value: unknown, {
 				if (isWeakRef)
 					o += `WeakRef `
 
-				const isPromise = tryCatch(() => !!Promise.prototype.then.call(value).catch(), () => false)
+				const isPromise = tryCatch(() => !!PromiseThen(value, undefined, nop), () => false)
 
 				if (isPromise)
 					o += `Promise `
