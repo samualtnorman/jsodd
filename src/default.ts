@@ -1543,11 +1543,7 @@ if (import.meta.vitest) {
 		const b = Symbol(`b`)
 		const c = Symbol(`c`)
 
-		expect(toJsodd({
-			[a]: b,
-			[b]: c,
-			[c]: a
-		})).toMatchPattern`
+		expect(toJsodd({ [a]: b, [b]: c, [c]: a })).toMatchPattern`
 			{
 				[Symbol("a") *${/\d/}]: Symbol("b")
 				[.[Symbol("a") *${0}]]: Symbol("c")
@@ -1561,13 +1557,7 @@ if (import.meta.vitest) {
 		const b = Symbol(`b`)
 		const c = Symbol(`c`)
 
-		expect(toJsodd({
-			foo: {
-				[a]: b,
-				[b]: c,
-				[c]: a
-			}
-		})).toMatchPattern`
+		expect(toJsodd({ foo: { [a]: b, [b]: c, [c]: a } })).toMatchPattern`
 			{
 				foo: {
 					[Symbol("a") *${/\d/}]: Symbol("b")
@@ -1652,16 +1642,8 @@ if (import.meta.vitest) {
 		const s = Symbol(`foo`)
 
 		expect(toJsodd(
-			{
-				[Symbol("bar")]: s
-			},
-			{
-				friendlyNames: mapFriendlyNames({
-					foo: Object.assign(Object.create(null), ({
-						[s]: 1
-					}))
-				})
-			}
+			{ [Symbol("bar")]: s },
+			{ friendlyNames: mapFriendlyNames({ foo: Object.assign(Object.create(null), ({ [s]: 1 })) }) }
 		)).toMatchPattern`
 			{
 				[Symbol("bar") *${/\d/}]: Symbol("foo") *${([ a ]) => String(Number(a) - 1)}
