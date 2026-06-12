@@ -219,6 +219,43 @@ const getPromiseRejectionEventAttributes = (value: unknown) =>
 		...PromiseRejectionEventGetReason && { reason: PromiseRejectionEventGetReason(value) },
 	}))
 
+const EventGetTarget = getGetter(Event.prototype, `target`)
+const EventGetCurrentTarget = getGetter(Event.prototype, `currentTarget`)
+const EventGetSrcElement = getGetter(Event.prototype, `srcElement`)
+const EventGetType = getGetter(Event.prototype, `type`)
+const EventGetCancelable = getGetter(Event.prototype, `cancelable`)
+const EventGetDefaultPrevented = getGetter(Event.prototype, `defaultPrevented`)
+const EventGetTimeStamp = getGetter(Event.prototype, `timeStamp`)
+const EventGetReturnValue = getGetter(Event.prototype, `returnValue`)
+const EventGetBubbles = getGetter(Event.prototype, `bubbles`)
+const EventGetComposed = getGetter(Event.prototype, `composed`)
+const EventGetEventPhase = getGetter(Event.prototype, `eventPhase`)
+const EventGetCancelBubble = getGetter(Event.prototype, `cancelBubble`)
+
+const makeAttributeGetter = (
+	getters: Record<string, ((v: any) => any) | undefined>
+): (value: any) => [ string, any ][] => {
+	const entries = Object.entries(getters).filter((entry): entry is [ string, (v: any) => any ] => !!entry[1])
+
+	return (value: any) =>
+		entries.flatMap(([ name, getter ]) => tryCatch((): [ string, any ][] => [ [ name, getter(value) ] ], () => []))
+}
+
+const getEventAttributes = makeAttributeGetter({
+	target: EventGetTarget,
+	currentTarget: EventGetCurrentTarget,
+	srcElement: EventGetSrcElement,
+	type: EventGetType,
+	cancelable: EventGetCancelable,
+	defaultPrevented: EventGetDefaultPrevented,
+	timeStamp: EventGetTimeStamp,
+	returnValue: EventGetReturnValue,
+	bubbles: EventGetBubbles,
+	composed: EventGetComposed,
+	eventPhase: EventGetEventPhase,
+	cancelBubble: EventGetCancelBubble
+})
+
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
 
 const symbolToJsodd = (symbol: symbol, friendlyNames: FriendlyNames, valueName?: string): string => {
@@ -930,6 +967,11 @@ export const toJsodd = (value: unknown, {
 				if (promiseRejectionEventAttributes)
 					o += `PromiseRejectionEvent `
 
+				const eventAttributes = getEventAttributes(value)
+
+				if (eventAttributes.length)
+					o += `Event `
+
 				const isArray = Array.isArray(value) || typedArrayAttributes
 
 				o += isArray ? `[` : `{`
@@ -1056,6 +1098,11 @@ export const toJsodd = (value: unknown, {
 					stringify(value, `${valueName}.${key}`)
 				}
 
+				const stringifyAttributes = (entries: [ name: string, value: any ][]) => {
+					for (const [ name, value ] of entries)
+						stringifyField(`<${name}>`, value)
+				}
+
 				if (domExceptionAttributes) {
 					for (const [ key, value ] of Object.entries(domExceptionAttributes))
 						stringifyField(`<${key}>`, value)
@@ -1095,6 +1142,8 @@ export const toJsodd = (value: unknown, {
 					for (const [ key, value ] of Object.entries(promiseRejectionEventAttributes))
 						stringifyField(`<${key}>`, value)
 				}
+
+				stringifyAttributes(eventAttributes)
 
 				const prototype = getPrototype(value)
 
@@ -1162,6 +1211,8 @@ export const toJsodd = (value: unknown, {
 						Request.prototype
 					: promiseRejectionEventAttributes ?
 						PromiseRejectionEvent.prototype
+					: eventAttributes.length ?
+						Event.prototype
 					: Object.prototype
 
 				if (prototype != expectedPrototype) {
@@ -1178,7 +1229,7 @@ export const toJsodd = (value: unknown, {
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
 					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue ||
 					domExceptionAttributes || dateTime != undefined || blobAttributes || headersEntries?.length ||
-					requestAttributes || promiseRejectionEventAttributes
+					requestAttributes || promiseRejectionEventAttributes || eventAttributes.length
 				)
 					o += `\n${indent()}`
 
@@ -1958,5 +2009,28 @@ if (import.meta.vitest) {
 				<code>: 0
 			}"
 		`)
+	})
+
+	test(`event`, () => {
+		expect(toJsodd(new Event(`foo`))).toMatchPattern`
+			Event {
+				[Symbol("type") *${/\d/}]: "foo"
+				[Symbol("kTarget") *${/\d/}]: null
+				[Symbol("kIsBeingDispatched") *${/\d/}]: false
+				[Symbol("kInPassiveListener") *${/\d/}]: false
+				<target>: null
+				<currentTarget>: null
+				<srcElement>: null
+				<type>: "foo"
+				<cancelable>: false
+				<defaultPrevented>: false
+				<timeStamp>: ${/\d+/}.${/\d+/}
+				<returnValue>: true
+				<bubbles>: false
+				<composed>: false
+				<eventPhase>: 0
+				<cancelBubble>: false
+			}
+		`
 	})
 }
