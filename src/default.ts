@@ -1,5 +1,5 @@
-import type { LaxPartial } from "@samual/types"
 import { tryCatch } from "@samual/try"
+import type { LaxPartial } from "@samual/types"
 
 const isObject = (value: unknown): value is object =>
 	(!!value && typeof value == `object`) || typeof value == `function`
