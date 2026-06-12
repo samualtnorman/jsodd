@@ -15,7 +15,7 @@ const getPrototype = Reflect.getPrototypeOf
 
 const normaliseGetter = <T>(getter: () => T) => (value: any) => getter.call(value)
 
-const getGetter = <T extends object, TKey extends keyof any>(target: T, key: TKey) => {
+const getGetter = <T extends object, TKey extends keyof T | (string & {}) | symbol>(target: T, key: TKey) => {
 	const getter = Reflect.getOwnPropertyDescriptor(target, key as any)?.get
 
 	if (getter)
