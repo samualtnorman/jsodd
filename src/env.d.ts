@@ -1,3 +1,5 @@
+import "vitest"
+
 type RawJSON = { rawJSON: string }
 
 interface JSON {
@@ -15,3 +17,12 @@ declare const SharedWorkerGlobalScope: object | undefined
 declare const WorkerGlobalScope: object | undefined
 declare const WorkerLocation: object | undefined
 declare const WorkerNavigator: object | undefined
+
+declare module 'vitest' {
+	interface Assertion<T = any> {
+		toMatchPattern(
+			template: TemplateStringsArray,
+			...substitutions: (number | RegExp | ((matches: string[]) => string))[]
+		): T
+	}
+}

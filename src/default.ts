@@ -1186,6 +1186,77 @@ export const toJsodd = (value: unknown, {
 if (import.meta.vitest) {
 	const { test, expect } = import.meta.vitest
 
+	expect.extend({
+		toMatchPattern(
+			got: unknown,
+			template: readonly string[],
+			...substitutions: (number | RegExp | ((matches: string[]) => string))[]
+		) {
+			if (typeof got != `string`)
+				return { message: () => `input was not a string`, pass: false }
+
+			let toCheck = got
+			const indentCount = template[0]!.match(/^\n(\t+)/)?.[1]!.length
+
+			if (indentCount)
+				toCheck = toCheck.replaceAll(/^/gm, `\t`.repeat(indentCount))
+
+			toCheck = toCheck.trim()
+
+			const matches: string[] = []
+
+			for (let i = 0; i < substitutions.length; i++) {
+				const subtemplate = i ? template[i]! : template[i]!.trimStart()
+
+				if (!toCheck.startsWith(subtemplate))
+					return { message: () => `did not match template`, pass: false, actual: toCheck.slice(0, subtemplate.length), expected: subtemplate }
+
+				toCheck = toCheck.slice(subtemplate.length)
+
+				const substitution = substitutions[i]!
+
+				if (typeof substitution == `number`) {
+					if (!Number.isInteger(substitution))
+						throw TypeError(`substitution match index must be integer`)
+
+					if (substitution >= matches.length)
+						throw TypeError(`substitution match index too high`)
+
+					const match = matches[substitution]!
+
+					if (!toCheck.startsWith(match))
+						return { message: () => `did not match substitution`, pass: false, actual: toCheck.slice(0, match.length), expected: match }
+
+					matches.push(match)
+					toCheck = toCheck.slice(match.length)
+				} else if (typeof substitution == `function`) {
+					const match = substitution(matches)
+
+					if (!toCheck.startsWith(match))
+						return { message: () => `did not match substitution`, pass: false, actual: toCheck.slice(0, match.length), expected: match }
+
+					matches.push(match)
+					toCheck = toCheck.slice(match.length)
+				} else {
+					const result = toCheck.match(RegExp(`^${substitution.source}`))
+
+					if (!result)
+						return { message: () => `did not match substitution`, pass: false, actual: toCheck, expected: substitution }
+
+					matches.push(result[0])
+					toCheck = toCheck.slice(result[0].length)
+				}
+			}
+
+			const lastTemplate = template.at(-1)!.trimEnd()
+
+			if (toCheck != lastTemplate)
+				return { message: () => `did not match template`, pass: false, actual: toCheck, expected: lastTemplate }
+
+			return { message: () => ``, pass: true }
+		}
+	})
+
 	test(`undefined`, () => {
 		expect(toJsodd(undefined)).toBe(`undefined`)
 	})
@@ -1253,26 +1324,26 @@ if (import.meta.vitest) {
 	test(`symbol as key and value`, () => {
 		const symbol = Symbol(`foo`)
 
-		expect(toJsodd({ [symbol]: symbol })).toMatchInlineSnapshot(`
-			"{
-				[Symbol("foo") *1]: Symbol("foo") *1
-			}"
-		`)
+		expect(toJsodd({ [symbol]: symbol })).toMatchPattern`
+			{
+				[Symbol("foo") *${/\d/}]: Symbol("foo") *${0}
+			}
+		`
 	})
 
 	test(`symbol used as key twice`, () => {
 		const symbol = Symbol(`foo`)
 
-		expect(toJsodd({ a: { [symbol]: symbol }, b: { [symbol]: symbol } })).toMatchInlineSnapshot(`
-			"{
+		expect(toJsodd({ a: { [symbol]: symbol }, b: { [symbol]: symbol } })).toMatchPattern`
+			{
 				a: {
-					[Symbol("foo") *1]: Symbol("foo") *1
+					[Symbol("foo") *${/\d/}]: Symbol("foo") *${0}
 				}
 				b: {
-					[Symbol("foo") *1]: Symbol("foo") *1
+					[Symbol("foo") *${0}]: Symbol("foo") *${0}
 				}
-			}"
-		`)
+			}
+		`
 	})
 
 	test(`symbol getter`, () => {
@@ -1470,13 +1541,13 @@ if (import.meta.vitest) {
 			[a]: b,
 			[b]: c,
 			[c]: a
-		})).toMatchInlineSnapshot(`
-			"{
-				[Symbol("a") *1]: Symbol("b")
-				[.[Symbol("a") *1]]: Symbol("c")
-				[.[.[Symbol("a") *1]]]: Symbol("a") *1
-			}"
-		`)
+		})).toMatchPattern`
+			{
+				[Symbol("a") *${/\d/}]: Symbol("b")
+				[.[Symbol("a") *${0}]]: Symbol("c")
+				[.[.[Symbol("a") *${0}]]]: Symbol("a") *${0}
+			}
+		`
 	})
 
 	test(`nested symbol key to symbol key to symbol key`, () => {
@@ -1490,15 +1561,15 @@ if (import.meta.vitest) {
 				[b]: c,
 				[c]: a
 			}
-		})).toMatchInlineSnapshot(`
-			"{
+		})).toMatchPattern`
+			{
 				foo: {
-					[Symbol("a") *1]: Symbol("b")
-					[.foo[Symbol("a") *1]]: Symbol("c")
-					[.foo[.foo[Symbol("a") *1]]]: Symbol("a") *1
+					[Symbol("a") *${/\d/}]: Symbol("b")
+					[.foo[Symbol("a") *${0}]]: Symbol("c")
+					[.foo[.foo[Symbol("a") *${0}]]]: Symbol("a") *${0}
 				}
-			}"
-		`)
+			}
+		`
 	})
 
 	test(`object nested in symbol keys`, () => {
@@ -1585,11 +1656,11 @@ if (import.meta.vitest) {
 					}))
 				})
 			}
-		)).toMatchInlineSnapshot(`
-			"{
-				[Symbol("bar") *2]: Symbol("foo") *1
-			}"
-		`)
+		)).toMatchPattern`
+			{
+				[Symbol("bar") *${/\d/}]: Symbol("foo") *${([ a ]) => String(Number(a) - 1)}
+			}
+		`
 	})
 
 	test(`terse method`, () => {
@@ -1824,8 +1895,8 @@ if (import.meta.vitest) {
 	})
 
 	test(`request`, () => {
-		expect(toJsodd(new Request(`https://samual.uk/`, { headers: { foo: `bar` } }))).toMatchInlineSnapshot(`
-			"Request {
+		expect(toJsodd(new Request(`https://samual.uk/`, { headers: { foo: `bar` } }))).toMatchPattern`
+			Request {
 				<method>: "GET"
 				<url>: "https://samual.uk/"
 				<headers>: Headers {
@@ -1852,16 +1923,16 @@ if (import.meta.vitest) {
 					[<NodeJsEventTargetHandlersSymbol>]: Map {
 						<prototype>: <NodeJsSafeMap>.prototype
 					}
-					[Symbol("kAborted") *1]: false
-					[Symbol("kReason") *2]: undefined
-					[Symbol("kComposite") *3]: false
+					[Symbol("kAborted") *${/\d/}]: false
+					[Symbol("kReason") *${/\d/}]: undefined
+					[Symbol("kComposite") *${/\d/}]: false
 					<prototype>: AbortSignal.prototype
 				}
 				<body>: null
 				<bodyUsed>: false
 				<duplex>: "half"
-			}"
-		`)
+			}
+		`
 	})
 
 	test(`empty headers`, () => {
