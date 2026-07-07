@@ -256,6 +256,29 @@ const getEventAttributes = makeAttributeGetter({
 	cancelBubble: EventGetCancelBubble
 })
 
+const ResponsePrototype = Response.prototype
+const ResponseGetBody = getGetter(ResponsePrototype, `body`)
+const ResponseGetBodyUsed = getGetter(ResponsePrototype, `bodyUsed`)
+const ResponseGetHeaders = getGetter(ResponsePrototype, `headers`)
+const ResponseGetOk = getGetter(ResponsePrototype, `ok`)
+const ResponseGetRedirected = getGetter(ResponsePrototype, `redirected`)
+const ResponseGetStatus = getGetter(ResponsePrototype, `status`)
+const ResponseGetStatusText = getGetter(ResponsePrototype, `statusText`)
+const ResponseGetType = getGetter(ResponsePrototype, `type`)
+const ResponseGetUrl = getGetter(ResponsePrototype, `url`)
+
+const getResponseAttributes = makeAttributeGetter({
+	body: ResponseGetBody,
+	bodyUsed: ResponseGetBodyUsed,
+	headers: ResponseGetHeaders,
+	ok: ResponseGetOk,
+	redirected: ResponseGetRedirected,
+	status: ResponseGetStatus,
+	statusText: ResponseGetStatusText,
+	type: ResponseGetType,
+	url: ResponseGetUrl
+})
+
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
 
 const symbolToJsodd = (symbol: symbol, friendlyNames: FriendlyNames, valueName?: string): string => {
@@ -972,6 +995,11 @@ export const toJsodd = (value: unknown, {
 				if (eventAttributes.length)
 					o += `Event `
 
+				const responseAttributes = getResponseAttributes(value)
+
+				if (responseAttributes.length)
+					o += `Response `
+
 				const isArray = Array.isArray(value) || typedArrayAttributes
 
 				o += isArray ? `[` : `{`
@@ -1144,6 +1172,7 @@ export const toJsodd = (value: unknown, {
 				}
 
 				stringifyAttributes(eventAttributes)
+				stringifyAttributes(responseAttributes)
 
 				const prototype = getPrototype(value)
 
@@ -1213,6 +1242,8 @@ export const toJsodd = (value: unknown, {
 						PromiseRejectionEvent.prototype
 					: eventAttributes.length ?
 						Event.prototype
+					: responseAttributes.length ?
+						Response.prototype
 					: Object.prototype
 
 				if (prototype != expectedPrototype) {
@@ -1229,7 +1260,8 @@ export const toJsodd = (value: unknown, {
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
 					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue ||
 					domExceptionAttributes || dateTime != undefined || blobAttributes || headersEntries?.length ||
-					requestAttributes || promiseRejectionEventAttributes || eventAttributes.length
+					requestAttributes || promiseRejectionEventAttributes || eventAttributes.length ||
+					responseAttributes.length
 				)
 					o += `\n${indent()}`
 
@@ -2032,5 +2064,21 @@ if (import.meta.vitest) {
 				<cancelBubble>: false
 			}
 		`
+	})
+
+	test(`empty response`, () => {
+		expect(toJsodd(new Response)).toMatchInlineSnapshot(`
+			"Response {
+				<body>: null
+				<bodyUsed>: false
+				<headers>: Headers {}
+				<ok>: true
+				<redirected>: false
+				<status>: 200
+				<statusText>: ""
+				<type>: "default"
+				<url>: ""
+			}"
+		`)
 	})
 }
