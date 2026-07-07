@@ -1,22 +1,24 @@
 import "vitest"
 
-type RawJSON = { rawJSON: string }
+declare global {
+	type RawJSON = { rawJSON: string }
 
-interface JSON {
-	isRawJSON?: (value: unknown) => value is RawJSON
-	rawJSON?: (value: null | boolean | number | string) => RawJSON
+	interface JSON {
+		isRawJSON?: (value: unknown) => value is RawJSON
+		rawJSON?: (value: null | boolean | number | string) => RawJSON
+	}
+
+	const FileReaderSync: object | undefined
+	const AudioTrack: object | undefined
+	const AudioTrackList: object | undefined
+	const VideoTrack: object | undefined
+	const VideoTrackList: object | undefined
+	const DedicatedWorkerGlobalScope: object | undefined
+	const SharedWorkerGlobalScope: object | undefined
+	const WorkerGlobalScope: object | undefined
+	const WorkerLocation: object | undefined
+	const WorkerNavigator: object | undefined
 }
-
-declare const FileReaderSync: object | undefined
-declare const AudioTrack: object | undefined
-declare const AudioTrackList: object | undefined
-declare const VideoTrack: object | undefined
-declare const VideoTrackList: object | undefined
-declare const DedicatedWorkerGlobalScope: object | undefined
-declare const SharedWorkerGlobalScope: object | undefined
-declare const WorkerGlobalScope: object | undefined
-declare const WorkerLocation: object | undefined
-declare const WorkerNavigator: object | undefined
 
 declare module 'vitest' {
 	interface Assertion<T = any> {
