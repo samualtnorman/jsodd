@@ -331,7 +331,7 @@ const makeFriendlyNamesQueue = (values: Record<string, unknown>, friendlyNames: 
 		return []
 	})
 
-export const mapFriendlyNames = (values: Record<string, unknown>, friendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount: 0 }): FriendlyNames => {
+const mapFriendlyNames = (values: Record<string, unknown>, friendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount: 0 }): FriendlyNames => {
 	const nameKey = (key: string | symbol): string => {
 		if (typeof key == `string`)
 			return key
