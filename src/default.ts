@@ -315,7 +315,7 @@ export type FriendlyNames = { map: Map<object | symbol, string>, symbolReference
 export const cloneFriendlyNames = ({ map = new Map, symbolReferenceCount = 0 }: FriendlyNames) =>
 	({ map: new Map(map), symbolReferenceCount })
 
-export const mapFriendlyNames = (values: Record<string, object | symbol | undefined>, friendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount: 0 }): FriendlyNames => {
+export const mapFriendlyNames = (values: Record<string, unknown>, friendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount: 0 }): FriendlyNames => {
 	const nameKey = (key: string | symbol): string => {
 		if (typeof key == `string`)
 			return key
@@ -337,11 +337,12 @@ export const mapFriendlyNames = (values: Record<string, object | symbol | undefi
 	}
 
 	const queue: { name: string, value: object }[] = Object.entries(values).flatMap(([ name, value ]) => {
-		if (value !== undefined) {
+		if (typeof value == `symbol`)
+			friendlyNames.map.set(value, name)
+		else if (isObject(value)) {
 			friendlyNames.map.set(value, name)
 
-			if (typeof value != `symbol`)
-				return { name, value }
+			return { name, value }
 		}
 
 		return []
