@@ -357,7 +357,7 @@ export const mapFriendlyNames = (values: Record<string, unknown>, friendlyNames:
 
 			if ("value" in descriptor) {
 				if (
-					(isObject(descriptor.value) || typeof descriptor.value == `function` || isSymbol(descriptor.value)) &&
+					(isObject(descriptor.value) || isSymbol(descriptor.value)) &&
 					!friendlyNames.map.has(descriptor.value)
 				) {
 					const valueName = `${item.name}${keyName[0] == `[` ? `` : `.`}${keyName}`
@@ -838,7 +838,7 @@ export const toJsodd = (value: unknown, {
 			o += symbolToJsodd(value, friendlyNames, valueName)
 		else if (JSON.isRawJSON?.(value)) {
 			o += `RawJSON ${JSON.stringify(value.rawJSON)}`
-		} else if (typeof value == `function` || isObject(value)) {
+		} else if (isObject(value)) {
 			if (friendlyNames.map.has(value))
 				o += friendlyNames.map.get(value)!
 			else {
