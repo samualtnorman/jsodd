@@ -2,6 +2,7 @@ import { tryCatch } from "@samual/try"
 import type { LaxPartial } from "@samual/types"
 
 const isObject = (value: unknown): value is object => typeof value == `object` ? !!value : typeof value == `function`
+const isSymbol = (value: unknown): value is symbol => typeof value == `symbol`
 
 /** `Object.isFrozen()` is bugged in V8, looks like it ignores the `.prototype` property or something. */
 const isActuallyFrozen = (target: object) => !Reflect.isExtensible(target) && Reflect.ownKeys(target).every(key => {
@@ -336,7 +337,7 @@ export const mapFriendlyNames = (values: Record<string, unknown>, friendlyNames:
 	}
 
 	const queue: { name: string, value: object }[] = Object.entries(values).flatMap(([ name, value ]) => {
-		if (typeof value == `symbol`)
+		if (isSymbol(value))
 			friendlyNames.map.set(value, name)
 		else if (isObject(value)) {
 			friendlyNames.map.set(value, name)
@@ -356,7 +357,7 @@ export const mapFriendlyNames = (values: Record<string, unknown>, friendlyNames:
 
 			if ("value" in descriptor) {
 				if (
-					(isObject(descriptor.value) || typeof descriptor.value == `function` || typeof descriptor.value == `symbol`) &&
+					(isObject(descriptor.value) || typeof descriptor.value == `function` || isSymbol(descriptor.value)) &&
 					!friendlyNames.map.has(descriptor.value)
 				) {
 					const valueName = `${item.name}${keyName[0] == `[` ? `` : `.`}${keyName}`
@@ -833,7 +834,7 @@ export const toJsodd = (value: unknown, {
 			o += `${value}n`
 		else if (typeof value == `string`)
 			o += stringToJsodd(value, { indentLevel: indentLevel + 1, indentString })
-		else if (typeof value == `symbol`)
+		else if (isSymbol(value))
 			o += symbolToJsodd(value, friendlyNames, valueName)
 		else if (JSON.isRawJSON?.(value)) {
 			o += `RawJSON ${JSON.stringify(value.rawJSON)}`
@@ -1053,7 +1054,7 @@ export const toJsodd = (value: unknown, {
 						if (descriptor.writable == false && !isActuallyFrozen(value))
 							prefix += `readonly `
 
-						const keyName = typeof key == `symbol` ? `[${symbolToJsodd(key, friendlyNames)}]` : formatName(key)
+						const keyName = isSymbol(key) ? `[${symbolToJsodd(key, friendlyNames)}]` : formatName(key)
 						const expectedFunctionName = typeof key == `string` ? key : `[${key.description}]`
 
 						const stringifyKeyAndValue = (value: unknown, expectedFunctionName: string, name: string) => {
