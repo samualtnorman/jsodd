@@ -1,7 +1,8 @@
 import { tryCatch } from "@samual/try"
-import type { LaxPartial } from "@samual/types"
+import type { AnyFunction, LaxPartial } from "@samual/types"
 
-const isObject = (value: unknown): value is object => typeof value == `object` ? !!value : typeof value == `function`
+const isFunction = (value: unknown): value is AnyFunction => typeof value == `function`
+const isObject = (value: unknown): value is object => typeof value == `object` ? !!value : isFunction(value)
 const isSymbol = (value: unknown): value is symbol => typeof value == `symbol`
 
 /** `Object.isFrozen()` is bugged in V8, looks like it ignores the `.prototype` property or something. */
@@ -855,7 +856,7 @@ export const toJsodd = (value: unknown, {
 
 				const keys = new Set(Reflect.ownKeys(value))
 
-				if (typeof value == `function`) {
+				if (isFunction(value)) {
 					if (isTerseMethod)
 						keys.delete(`name`)
 					else {
@@ -1060,7 +1061,7 @@ export const toJsodd = (value: unknown, {
 						const stringifyKeyAndValue = (value: unknown, expectedFunctionName: string, name: string) => {
 							let isTerseMethod = false
 
-							if (typeof value == `function` && !friendlyNames.map.has(value)) {
+							if (isFunction(value) && !friendlyNames.map.has(value)) {
 								const nameDescriptor = Reflect.getOwnPropertyDescriptor(value, `name`)
 								const lengthDescriptor = Reflect.getOwnPropertyDescriptor(value, `length`)
 
@@ -1195,7 +1196,7 @@ export const toJsodd = (value: unknown, {
 						RegExp.prototype
 					: mapEntries ?
 						Map.prototype
-					: typeof value == `function` ?
+					: isFunction(value) ?
 						Function.prototype
 					: Array.isArray(value) ?
 						Array.prototype
@@ -1332,7 +1333,7 @@ if (import.meta.vitest) {
 
 					matches.push(match)
 					toCheck = toCheck.slice(match.length)
-				} else if (typeof substitution == `function`) {
+				} else if (isFunction(substitution)) {
 					const match = substitution(matches)
 
 					if (!toCheck.startsWith(match))
