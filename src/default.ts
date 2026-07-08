@@ -315,10 +315,7 @@ export type FriendlyNames = { map: Map<object | symbol, string>, symbolReference
 export const cloneFriendlyNames = ({ map = new Map, symbolReferenceCount = 0 }: FriendlyNames) =>
 	({ map: new Map(map), symbolReferenceCount })
 
-export const mapFriendlyNames = (values: Record<string, object | symbol | undefined>): FriendlyNames => {
-	const names = new Map<object | symbol, string>
-	let symbolReferenceCount = 0
-
+export const mapFriendlyNames = (values: Record<string, object | symbol | undefined>, friendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount: 0 }): FriendlyNames => {
 	const nameKey = (key: string | symbol): string => {
 		if (typeof key == `string`)
 			return key
@@ -328,19 +325,20 @@ export const mapFriendlyNames = (values: Record<string, object | symbol | undefi
 		if (symbolKey)
 			return `[Symbol.for(${JSON.stringify(symbolKey)})]`
 
-		if (names.has(key))
-			return `[${names.get(key)}]`
+		if (friendlyNames.map.has(key))
+			return `[${friendlyNames.map.get(key)}]`
 
-		const name = `Symbol(${key.description == null ? `` : JSON.stringify(key.description)}) *${++symbolReferenceCount}`
+		const name =
+			`Symbol(${key.description == null ? `` : JSON.stringify(key.description)}) *${++friendlyNames.symbolReferenceCount}`
 
-		names.set(key, name)
+		friendlyNames.map.set(key, name)
 
 		return `[${name}]`
 	}
 
 	const queue: { name: string, value: object }[] = Object.entries(values).flatMap(([ name, value ]) => {
 		if (value !== undefined) {
-			names.set(value, name)
+			friendlyNames.map.set(value, name)
 
 			if (typeof value != `symbol`)
 				return { name, value }
@@ -359,27 +357,27 @@ export const mapFriendlyNames = (values: Record<string, object | symbol | undefi
 			if ("value" in descriptor) {
 				if (
 					(isObject(descriptor.value) || typeof descriptor.value == `function` || typeof descriptor.value == `symbol`) &&
-					!names.has(descriptor.value)
+					!friendlyNames.map.has(descriptor.value)
 				) {
 					const valueName = `${item.name}${keyName[0] == `[` ? `` : `.`}${keyName}`
 
-					names.set(descriptor.value, valueName)
+					friendlyNames.map.set(descriptor.value, valueName)
 
 					if (typeof descriptor.value != `symbol`)
 						queue.push({ name: valueName, value: descriptor.value })
 				}
 			} else {
-				if (descriptor.get && !names.has(descriptor.get)) {
+				if (descriptor.get && !friendlyNames.map.has(descriptor.get)) {
 					const valueName = `${item.name}.<get ${keyName}>`
 
-					names.set(descriptor.get, valueName)
+					friendlyNames.map.set(descriptor.get, valueName)
 					queue.push({ name: valueName, value: descriptor.get })
 				}
 
-				if (descriptor.set && !names.has(descriptor.set)) {
+				if (descriptor.set && !friendlyNames.map.has(descriptor.set)) {
 					const valueName = `${item.name}.<set ${keyName}>`
 
-					names.set(descriptor.set, valueName)
+					friendlyNames.map.set(descriptor.set, valueName)
 					queue.push({ name: valueName, value: descriptor.set })
 				}
 			}
@@ -387,15 +385,15 @@ export const mapFriendlyNames = (values: Record<string, object | symbol | undefi
 
 		const prototype = getPrototype(item.value)
 
-		if (prototype && !names.has(prototype)) {
+		if (prototype && !friendlyNames.map.has(prototype)) {
 			const prototypeName = `${item.name}.<prototype>`
 
-			names.set(prototype, prototypeName)
+			friendlyNames.map.set(prototype, prototypeName)
 			queue.push({ name: prototypeName, value: prototype })
 		}
 	}
 
-	return { map: names, symbolReferenceCount }
+	return friendlyNames
 }
 
 const functionNameOrLengthDescriptorIsProper = (function_: object, descriptor: PropertyDescriptor) =>
