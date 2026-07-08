@@ -1,8 +1,7 @@
 import { tryCatch } from "@samual/try"
 import type { LaxPartial } from "@samual/types"
 
-const isObject = (value: unknown): value is object =>
-	(!!value && typeof value == `object`) || typeof value == `function`
+const isObject = (value: unknown): value is object => typeof value == `object` ? !!value : typeof value == `function`
 
 /** `Object.isFrozen()` is bugged in V8, looks like it ignores the `.prototype` property or something. */
 const isActuallyFrozen = (target: object) => !Reflect.isExtensible(target) && Reflect.ownKeys(target).every(key => {
