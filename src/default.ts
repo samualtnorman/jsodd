@@ -107,6 +107,13 @@ const NodeJsEventTargetHandlersSymbol = eventTargetInstanceSymbolKeys.find(symbo
 
 const NodeJsSafeMap: object | undefined = NodeJsEventTargetEventsSymbol && (eventTarget as any)[NodeJsEventTargetEventsSymbol]?.constructor
 
+const eventInstance = new Event(``)
+const eventInstanceSymbolKeys = Object.getOwnPropertySymbols(eventInstance)
+const NodeJs_Event_symbol_type = eventInstanceSymbolKeys.find(symbol => symbol.description == `type`)
+const NodeJs_Event_symbol_kTarget = eventInstanceSymbolKeys.find(symbol => symbol.description == `kTarget`)
+const NodeJs_Event_symbol_kIsBeingDispatched = eventInstanceSymbolKeys.find(symbol => symbol.description == `kIsBeingDispatched`)
+const NodeJs_Event_symbol_kInPassiveListener = eventInstanceSymbolKeys.find(symbol => symbol.description == `kInPassiveListener`)
+
 const getBlobAttributes = (value: unknown): { size: number, type: string } | undefined =>
 	BlobGetSize && BlobGetType &&
 	tryCatch(() => ({ size: BlobGetSize(value), type: BlobGetType(value) }))
@@ -308,7 +315,7 @@ export type FriendlyNames = { map: Map<object | symbol, string>, symbolReference
 export const cloneFriendlyNames = ({ map = new Map, symbolReferenceCount = 0 }: FriendlyNames) =>
 	({ map: new Map(map), symbolReferenceCount })
 
-export const mapFriendlyNames = (values: Record<string, object | symbol>): FriendlyNames => {
+export const mapFriendlyNames = (values: Record<string, object | symbol | undefined>): FriendlyNames => {
 	const names = new Map<object | symbol, string>
 	let symbolReferenceCount = 0
 
@@ -331,14 +338,16 @@ export const mapFriendlyNames = (values: Record<string, object | symbol>): Frien
 		return `[${name}]`
 	}
 
-	const queue: { name: string, value: object }[] = Object.entries(values)
-		.map(([ name, value ]) => {
+	const queue: { name: string, value: object }[] = Object.entries(values).flatMap(([ name, value ]) => {
+		if (value !== undefined) {
 			names.set(value, name)
 
 			if (typeof value != `symbol`)
 				return { name, value }
-		})
-		.filter(Boolean)
+		}
+
+		return []
+	})
 
 	while (queue.length) {
 		const item = queue.shift()!
@@ -731,6 +740,12 @@ const builtinFriendlyNames = mapFriendlyNames({
 
 			// Server-sent events interfaces
 			...typeof EventSource != `undefined` && { EventSource },
+
+	// Node.js Internal Symbols
+	'<Node.js Event "type" symbol>': NodeJs_Event_symbol_type,
+	'<Node.js Event "kTarget" symbol>': NodeJs_Event_symbol_kTarget,
+	'<Node.js Event "kIsBeingDispatched" symbol>': NodeJs_Event_symbol_kIsBeingDispatched,
+	'<Node.js Event "kInPassiveListener" symbol>': NodeJs_Event_symbol_kInPassiveListener,
 
 	...angleNames({
 		TypedArray,
@@ -2046,10 +2061,10 @@ if (import.meta.vitest) {
 	test(`event`, () => {
 		expect(toJsodd(new Event(`foo`))).toMatchPattern`
 			Event {
-				[Symbol("type") *${/\d/}]: "foo"
-				[Symbol("kTarget") *${/\d/}]: null
-				[Symbol("kIsBeingDispatched") *${/\d/}]: false
-				[Symbol("kInPassiveListener") *${/\d/}]: false
+				[<Node.js Event "type" symbol>]: "foo"
+				[<Node.js Event "kTarget" symbol>]: null
+				[<Node.js Event "kIsBeingDispatched" symbol>]: false
+				[<Node.js Event "kInPassiveListener" symbol>]: false
 				<target>: null
 				<currentTarget>: null
 				<srcElement>: null
