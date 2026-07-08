@@ -316,6 +316,21 @@ export type FriendlyNames = { map: Map<object | symbol, string>, symbolReference
 export const cloneFriendlyNames = ({ map = new Map, symbolReferenceCount = 0 }: FriendlyNames) =>
 	({ map: new Map(map), symbolReferenceCount })
 
+type FriendlyNamesQueue = { name: string, value: object }[]
+
+const makeFriendlyNamesQueue = (values: Record<string, unknown>, friendlyNames: FriendlyNames): FriendlyNamesQueue =>
+	Object.entries(values).flatMap(([ name, value ]) => {
+		if (isSymbol(value))
+			friendlyNames.map.set(value, name)
+		else if (isObject(value)) {
+			friendlyNames.map.set(value, name)
+
+			return { name, value }
+		}
+
+		return []
+	})
+
 export const mapFriendlyNames = (values: Record<string, unknown>, friendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount: 0 }): FriendlyNames => {
 	const nameKey = (key: string | symbol): string => {
 		if (typeof key == `string`)
@@ -337,17 +352,7 @@ export const mapFriendlyNames = (values: Record<string, unknown>, friendlyNames:
 		return `[${name}]`
 	}
 
-	const queue: { name: string, value: object }[] = Object.entries(values).flatMap(([ name, value ]) => {
-		if (isSymbol(value))
-			friendlyNames.map.set(value, name)
-		else if (isObject(value)) {
-			friendlyNames.map.set(value, name)
-
-			return { name, value }
-		}
-
-		return []
-	})
+	const queue = makeFriendlyNamesQueue(values, friendlyNames)
 
 	while (queue.length) {
 		const item = queue.shift()!
