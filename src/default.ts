@@ -2,13 +2,14 @@ import { tryCatch } from "@samual/try"
 import type { AnyFunction, LaxPartial } from "@samual/types"
 
 const getDescriptor = Reflect.getOwnPropertyDescriptor
+const isExtensible = Reflect.isExtensible
 
 const isFunction = (value: unknown): value is AnyFunction => typeof value == `function`
 const isObject = (value: unknown): value is object => typeof value == `object` ? !!value : isFunction(value)
 const isSymbol = (value: unknown): value is symbol => typeof value == `symbol`
 
 /** `Object.isFrozen()` is bugged in V8, looks like it ignores the `.prototype` property or something. */
-const isActuallyFrozen = (target: object) => !Reflect.isExtensible(target) && Reflect.ownKeys(target).every(key => {
+const isActuallyFrozen = (target: object) => !isExtensible(target) && Reflect.ownKeys(target).every(key => {
 	const { configurable, writable } = getDescriptor(target, key)!
 
 	return !(configurable || writable)
@@ -541,7 +542,7 @@ export const toJsodd = (value: unknown, {
 					o += `frozen `
 				else if (Object.isSealed(value))
 					o += `sealed `
-				else if (!Reflect.isExtensible(value))
+				else if (!isExtensible(value))
 					o += `unextensible `
 
 				const keys = new Set(Reflect.ownKeys(value))
