@@ -130,13 +130,11 @@ const makeAttributeGetter = (
 
 const getBlobAttributes = makeAttributeGetter({ size: BlobGetSize, type: BlobGetType })
 
-const getFileAttributes = (value: unknown): { lastModified: number, name: string, webkitRelativePath?: string } | undefined =>
-	FileGetLastModified && FileGetName &&
-	tryCatch(() => ({
-		lastModified: FileGetLastModified(value),
-		name: FileGetName(value),
-		...FileGetWebkitRelativePath && { webkitRelativePath: FileGetWebkitRelativePath(value) }
-	}))
+const getFileAttributes = makeAttributeGetter({
+	lastModified: FileGetLastModified,
+	name: FileGetName,
+	webkitRelativePath: FileGetWebkitRelativePath
+})
 
 const getTypedArrayAttributes = (value: unknown):
 	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, tag: string } | undefined =>
@@ -665,7 +663,7 @@ export const toJsodd = (value: unknown, {
 				const blobAttributes = getBlobAttributes(value)
 				const fileAttributes = getFileAttributes(value)
 
-				if (fileAttributes)
+				if (fileAttributes.length)
 					o += `File `
 				else if (blobAttributes.length)
 					o += `Blob `
@@ -839,14 +837,7 @@ export const toJsodd = (value: unknown, {
 					stringifyField(`<time>`, dateTime)
 
 				stringifyAttributes(blobAttributes)
-
-				if (fileAttributes) {
-					stringifyField(`<lastModified>`, fileAttributes.lastModified)
-					stringifyField(`<name>`, fileAttributes.name)
-
-					if (fileAttributes.webkitRelativePath != undefined)
-						stringifyField(`<webkitRelativePath>`, fileAttributes.webkitRelativePath)
-				}
+				stringifyAttributes(fileAttributes)
 
 				if (headersEntries) {
 					for (const [ index, key, value ] of headersEntries) {
@@ -923,7 +914,7 @@ export const toJsodd = (value: unknown, {
 						Symbol.prototype
 					: dateTime != undefined ?
 						Date.prototype
-					: fileAttributes ?
+					: fileAttributes.length ?
 						File.prototype
 					: blobAttributes?.length ?
 						Blob.prototype
