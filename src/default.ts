@@ -414,14 +414,6 @@ const functionLengthDescriptorIsProper = (function_: object, descriptor?: Proper
 	descriptor is { configurable: boolean, enumerable: false, value: number, writable: false } =>
 	!!(typeof descriptor?.value == `number` && functionNameOrLengthDescriptorIsProper(function_, descriptor))
 
-declare const InternalError: object
-declare const Temporal: object
-declare const fetchLater: object
-declare const DeferredRequestInit: object
-declare const FetchLaterResult: object
-declare const DOMError: object
-declare const QuotaExceededError: object
-
 const angleNames = (toAngleName: Record<string, object | symbol | undefined>): Record<string, object | symbol> =>
 	Object.fromEntries(
 		Object.entries(toAngleName)
@@ -430,369 +422,58 @@ const angleNames = (toAngleName: Record<string, object | symbol | undefined>): R
 
 const builtinFriendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount: 0 }
 
-mapFriendlyNames(makeFriendlyNamesQueue({
-	// Standard built-in objects (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects)
-		// Fundamental objects
-		Function,
-		Object,
-		Boolean,
-		Symbol,
+{
+	const queue = makeFriendlyNamesQueue(globalThis, builtinFriendlyNames)
 
-		// Error objects
-		Error,
-		AggregateError,
-		EvalError,
-		RangeError,
-		ReferenceError,
-		...typeof SuppressedError != `undefined` ? { SuppressedError } : undefined,
-		SyntaxError,
-		TypeError,
-		URIError,
-		...typeof InternalError != `undefined` && { InternalError },
+	queue.push(...makeFriendlyNamesQueue({
+		// Node.js Internal Symbols
+		'<Node.js Event "type" symbol>': NodeJs_Event_symbol_type,
+		'<Node.js Event "kTarget" symbol>': NodeJs_Event_symbol_kTarget,
+		'<Node.js Event "kIsBeingDispatched" symbol>': NodeJs_Event_symbol_kIsBeingDispatched,
+		'<Node.js Event "kInPassiveListener" symbol>': NodeJs_Event_symbol_kInPassiveListener,
 
-		// Numbers and dates
-		Number,
-		BigInt,
-		Math,
-		Date,
-		...typeof Temporal != `undefined` && { Temporal },
+		...angleNames({
+			TypedArray,
+			GeneratorFunction,
+			AsyncGenerator,
+			AsyncFunction,
+			GeneratorPrototype,
+			ArrayIteratorPrototype,
+			StringIteratorPrototype,
+			MapIteratorPrototype,
+			SetIteratorPrototype,
+			IteratorHelperPrototype,
+			RegExpStringIteratorHelper,
+			SegmentsPrototype,
+			SegmentsIteratorPrototype,
+			WrapForValidIteratorPrototype,
+			V8ErrorStackGetter: v8ErrorStackDescriptor?.get,
+			V8ErrorStackSetter: v8ErrorStackDescriptor?.set,
+			NodeJsBlobHandleSymbol,
+			NodeJsBlobLengthSymbol,
+			NodeJsBlobTypeSymbol,
+			NodeJsInternalBlob,
+			NodeJsFileStateSymbol,
+			NodeJsFileState,
+			NodeJsDOMExceptionMessagingCloneSymbol,
+			NodeJsDOMExceptionMessagingDeserializeSymbol,
+			NodeJsEventTargetNewListenerSymbol,
+			NodeJsEventTargetRemoveListenerSymbol,
+			NodeJsEventTargetRemoveWeakListenerHelperSymbol,
+			NodeJsEventTargetCreateEventSymbol,
+			NodeJsAbortControllerMakeTransferableSymbol,
+			NodeJsAbortSignalMessagingTransferSymbol,
+			NodeJsAbortSignalMessagingTransferListSymbol,
+			NodeJsEventTargetEventsSymbol,
+			NodeJsEventTargetEventsMaxEventTargetListenersSymbol,
+			NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol,
+			NodeJsEventTargetHandlersSymbol,
+			NodeJsSafeMap
+		})
+	}, builtinFriendlyNames))
 
-		// Text processing
-		String,
-		RegExp,
-
-		// Indexed collections
-		Array,
-		Int8Array,
-		Uint8Array,
-		Uint8ClampedArray,
-		Int16Array,
-		Uint16Array,
-		Int32Array,
-		Uint32Array,
-		BigInt64Array,
-		BigUint64Array,
-		...typeof Float16Array != `undefined` ? { Float16Array } : undefined,
-		Float32Array,
-		Float64Array,
-
-		// Keyed collections
-		Map,
-		Set,
-		WeakMap,
-		WeakSet,
-
-		// Structured data
-		ArrayBuffer,
-		...typeof SharedArrayBuffer != `undefined` ? { SharedArrayBuffer } : undefined,
-		DataView,
-		Atomics,
-		JSON,
-
-		// Managing memory
-		WeakRef,
-		FinalizationRegistry,
-
-		// Function properties
-		eval,
-		isFinite,
-		isNaN,
-		parseFloat,
-		parseInt,
-		decodeURI,
-		decodeURIComponent,
-		encodeURI,
-		encodeURIComponent,
-		...typeof escape != `undefined` && { escape },
-		...typeof unescape != `undefined` && { unescape },
-
-		// Control abstraction objects
-		...typeof Iterator != `undefined` ? { Iterator } : undefined,
-		Promise,
-		...typeof AsyncDisposableStack != `undefined` ? { AsyncDisposableStack } : undefined,
-
-		// Reflection
-		Reflect,
-		Proxy,
-
-		// Internationalization
-		Intl,
-
-	// Document Object Model (DOM) (https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model)
-    ...typeof AbortController != `undefined` ? { AbortController } : undefined,
-    ...typeof AbortSignal != `undefined` ? { AbortSignal } : undefined,
-    ...typeof AbstractRange != `undefined` ? { AbstractRange } : undefined,
-    ...typeof Attr != `undefined` ? { Attr } : undefined,
-    ...typeof CDATASection != `undefined` ? { CDATASection } : undefined,
-    ...typeof CharacterData != `undefined` ? { CharacterData } : undefined,
-    ...typeof Comment != `undefined` ? { Comment } : undefined,
-    ...typeof CustomEvent != `undefined` ? { CustomEvent } : undefined,
-    ...typeof Document != `undefined` ? { Document } : undefined,
-    ...typeof DocumentFragment != `undefined` ? { DocumentFragment } : undefined,
-    ...typeof DocumentType != `undefined` ? { DocumentType } : undefined,
-    ...typeof DOMError != `undefined` ? { DOMError } : undefined,
-    ...typeof DOMException != `undefined` ? { DOMException } : undefined,
-    ...typeof DOMImplementation != `undefined` ? { DOMImplementation } : undefined,
-    ...typeof DOMParser != `undefined` ? { DOMParser } : undefined,
-    ...typeof DOMTokenList != `undefined` ? { DOMTokenList } : undefined,
-    ...typeof Element != `undefined` ? { Element } : undefined,
-    ...typeof Event != `undefined` ? { Event } : undefined,
-    ...typeof EventTarget != `undefined` ? { EventTarget } : undefined,
-    ...typeof HTMLCollection != `undefined` ? { HTMLCollection } : undefined,
-    ...typeof MutationObserver != `undefined` ? { MutationObserver } : undefined,
-    ...typeof MutationRecord != `undefined` ? { MutationRecord } : undefined,
-    ...typeof NamedNodeMap != `undefined` ? { NamedNodeMap } : undefined,
-    ...typeof Node != `undefined` ? { Node } : undefined,
-    ...typeof NodeIterator != `undefined` ? { NodeIterator } : undefined,
-    ...typeof NodeList != `undefined` ? { NodeList } : undefined,
-    ...typeof ProcessingInstruction != `undefined` ? { ProcessingInstruction } : undefined,
-    ...typeof QuotaExceededError != `undefined` ? { QuotaExceededError } : undefined,
-    ...typeof Range != `undefined` ? { Range } : undefined,
-    ...typeof ShadowRoot != `undefined` ? { ShadowRoot } : undefined,
-    ...typeof StaticRange != `undefined` ? { StaticRange } : undefined,
-    ...typeof Text != `undefined` ? { Text } : undefined,
-    ...typeof TreeWalker != `undefined` ? { TreeWalker } : undefined,
-    ...typeof XMLDocument != `undefined` ? { XMLDocument } : undefined,
-    ...typeof XPathEvaluator != `undefined` ? { XPathEvaluator } : undefined,
-    ...typeof XPathExpression != `undefined` ? { XPathExpression } : undefined,
-    ...typeof XPathResult != `undefined` ? { XPathResult } : undefined,
-    ...typeof XSLTProcessor != `undefined` ? { XSLTProcessor } : undefined,
-
-	// File API (https://developer.mozilla.org/en-US/docs/Web/API/File_API)
-	Blob,
-	File,
-	...typeof FileList != `undefined` && { FileList },
-	...typeof FileReader != `undefined` && { FileReader },
-	...typeof FileReaderSync != `undefined` && { FileReaderSync },
-
-	// Fetch API (https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
-	fetch,
-	...typeof fetchLater != `undefined` && { fetchLater },
-	...typeof DeferredRequestInit != `undefined` && { DeferredRequestInit },
-	...typeof FetchLaterResult != `undefined` && { FetchLaterResult },
-	Headers,
-	Request,
-	Response,
-
-	// HTML DOM API (https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API#html_dom_api_interfaces)
-		// HTML element interfaces
-		...typeof HTMLAnchorElement != `undefined` && { HTMLAnchorElement },
-		...typeof HTMLAreaElement != `undefined` && { HTMLAreaElement },
-		...typeof HTMLAudioElement != `undefined` && { HTMLAudioElement },
-		...typeof HTMLBaseElement != `undefined` && { HTMLBaseElement },
-		...typeof HTMLBodyElement != `undefined` && { HTMLBodyElement },
-		...typeof HTMLBRElement != `undefined` && { HTMLBRElement },
-		...typeof HTMLButtonElement != `undefined` && { HTMLButtonElement },
-		...typeof HTMLCanvasElement != `undefined` && { HTMLCanvasElement },
-		...typeof HTMLDataElement != `undefined` && { HTMLDataElement },
-		...typeof HTMLDataListElement != `undefined` && { HTMLDataListElement },
-		...typeof HTMLDetailsElement != `undefined` && { HTMLDetailsElement },
-		...typeof HTMLDialogElement != `undefined` && { HTMLDialogElement },
-		...typeof HTMLDirectoryElement != `undefined` && { HTMLDirectoryElement },
-		...typeof HTMLDivElement != `undefined` && { HTMLDivElement },
-		...typeof HTMLDListElement != `undefined` && { HTMLDListElement },
-		...typeof HTMLElement != `undefined` && { HTMLElement },
-		...typeof HTMLEmbedElement != `undefined` && { HTMLEmbedElement },
-		...typeof HTMLFieldSetElement != `undefined` && { HTMLFieldSetElement },
-		...typeof HTMLFormElement != `undefined` && { HTMLFormElement },
-		...typeof HTMLHRElement != `undefined` && { HTMLHRElement },
-		...typeof HTMLHeadElement != `undefined` && { HTMLHeadElement },
-		...typeof HTMLHeadingElement != `undefined` && { HTMLHeadingElement },
-		...typeof HTMLHtmlElement != `undefined` && { HTMLHtmlElement },
-		...typeof HTMLIFrameElement != `undefined` && { HTMLIFrameElement },
-		...typeof HTMLImageElement != `undefined` && { HTMLImageElement },
-		...typeof HTMLInputElement != `undefined` && { HTMLInputElement },
-		...typeof HTMLLabelElement != `undefined` && { HTMLLabelElement },
-		...typeof HTMLLegendElement != `undefined` && { HTMLLegendElement },
-		...typeof HTMLLIElement != `undefined` && { HTMLLIElement },
-		...typeof HTMLLinkElement != `undefined` && { HTMLLinkElement },
-		...typeof HTMLMapElement != `undefined` && { HTMLMapElement },
-		...typeof HTMLMediaElement != `undefined` && { HTMLMediaElement },
-		...typeof HTMLMenuElement != `undefined` && { HTMLMenuElement },
-		...typeof HTMLMetaElement != `undefined` && { HTMLMetaElement },
-		...typeof HTMLMeterElement != `undefined` && { HTMLMeterElement },
-		...typeof HTMLModElement != `undefined` && { HTMLModElement },
-		...typeof HTMLObjectElement != `undefined` && { HTMLObjectElement },
-		...typeof HTMLOListElement != `undefined` && { HTMLOListElement },
-		...typeof HTMLOptGroupElement != `undefined` && { HTMLOptGroupElement },
-		...typeof HTMLOptionElement != `undefined` && { HTMLOptionElement },
-		...typeof HTMLOutputElement != `undefined` && { HTMLOutputElement },
-		...typeof HTMLParagraphElement != `undefined` && { HTMLParagraphElement },
-		...typeof HTMLPictureElement != `undefined` && { HTMLPictureElement },
-		...typeof HTMLPreElement != `undefined` && { HTMLPreElement },
-		...typeof HTMLProgressElement != `undefined` && { HTMLProgressElement },
-		...typeof HTMLQuoteElement != `undefined` && { HTMLQuoteElement },
-		...typeof HTMLScriptElement != `undefined` && { HTMLScriptElement },
-		...typeof HTMLSelectElement != `undefined` && { HTMLSelectElement },
-		...typeof HTMLSlotElement != `undefined` && { HTMLSlotElement },
-		...typeof HTMLSourceElement != `undefined` && { HTMLSourceElement },
-		...typeof HTMLSpanElement != `undefined` && { HTMLSpanElement },
-		...typeof HTMLStyleElement != `undefined` && { HTMLStyleElement },
-		...typeof HTMLTableCaptionElement != `undefined` && { HTMLTableCaptionElement },
-		...typeof HTMLTableCellElement != `undefined` && { HTMLTableCellElement },
-		...typeof HTMLTableColElement != `undefined` && { HTMLTableColElement },
-		...typeof HTMLTableElement != `undefined` && { HTMLTableElement },
-		...typeof HTMLTableRowElement != `undefined` && { HTMLTableRowElement },
-		...typeof HTMLTableSectionElement != `undefined` && { HTMLTableSectionElement },
-		...typeof HTMLTemplateElement != `undefined` && { HTMLTemplateElement },
-		...typeof HTMLTextAreaElement != `undefined` && { HTMLTextAreaElement },
-		...typeof HTMLTimeElement != `undefined` && { HTMLTimeElement },
-		...typeof HTMLTitleElement != `undefined` && { HTMLTitleElement },
-		...typeof HTMLTrackElement != `undefined` && { HTMLTrackElement },
-		...typeof HTMLUListElement != `undefined` && { HTMLUListElement },
-		...typeof HTMLUnknownElement != `undefined` && { HTMLUnknownElement },
-		...typeof HTMLVideoElement != `undefined` && { HTMLVideoElement },
-
-		// Deprecated HTML Element Interfaces
-		...typeof HTMLMarqueeElement != `undefined` && { HTMLMarqueeElement },
-
-		// Obsolete HTML Element Interfaces
-		...typeof HTMLFontElement != `undefined` && { HTMLFontElement },
-		...typeof HTMLFrameElement != `undefined` && { HTMLFrameElement },
-		...typeof HTMLFrameSetElement != `undefined` && { HTMLFrameSetElement },
-
-		// Web app and browser integration interfaces
-		...typeof BarProp != `undefined` && { BarProp },
-		...typeof Navigator != `undefined` && { Navigator },
-		...typeof Window != `undefined` && { Window },
-
-		// Deprecated web app and browser integration interfaces
-		...typeof External != `undefined` && { External },
-
-		// Obsolete web app and browser integration interfaces
-		...typeof Plugin != `undefined` && { Plugin },
-		...typeof PluginArray != `undefined` && { PluginArray },
-
-		// Form support interfaces
-		...typeof FormDataEvent != `undefined` && { FormDataEvent },
-		...typeof HTMLFormControlsCollection != `undefined` && { HTMLFormControlsCollection },
-		...typeof HTMLOptionsCollection != `undefined` && { HTMLOptionsCollection },
-		...typeof RadioNodeList != `undefined` && { RadioNodeList },
-		...typeof ValidityState != `undefined` && { ValidityState },
-
-		// Canvas and image interfaces
-		...typeof CanvasGradient != `undefined` && { CanvasGradient },
-		...typeof CanvasPattern != `undefined` && { CanvasPattern },
-		...typeof CanvasRenderingContext2D != `undefined` && { CanvasRenderingContext2D },
-		...typeof ImageBitmap != `undefined` && { ImageBitmap },
-		...typeof ImageBitmapRenderingContext != `undefined` && { ImageBitmapRenderingContext },
-		...typeof ImageData != `undefined` && { ImageData },
-		...typeof OffscreenCanvas != `undefined` && { OffscreenCanvas },
-		...typeof OffscreenCanvasRenderingContext2D != `undefined` && { OffscreenCanvasRenderingContext2D },
-		...typeof Path2D != `undefined` && { Path2D },
-		...typeof TextMetrics != `undefined` && { TextMetrics },
-
-		// Media interfaces
-		...typeof AudioTrack != `undefined` && { AudioTrack },
-		...typeof AudioTrackList != `undefined` && { AudioTrackList },
-		...typeof MediaError != `undefined` && { MediaError },
-		...typeof TextTrack != `undefined` && { TextTrack },
-		...typeof TextTrackCue != `undefined` && { TextTrackCue },
-		...typeof TextTrackCueList != `undefined` && { TextTrackCueList },
-		...typeof TextTrackList != `undefined` && { TextTrackList },
-		...typeof TimeRanges != `undefined` && { TimeRanges },
-		...typeof TrackEvent != `undefined` && { TrackEvent },
-		...typeof VideoTrack != `undefined` && { VideoTrack },
-		...typeof VideoTrackList != `undefined` && { VideoTrackList },
-
-		// Drag and drop interfaces
-		...typeof DataTransfer != `undefined` && { DataTransfer },
-		...typeof DataTransferItem != `undefined` && { DataTransferItem },
-		...typeof DataTransferItemList != `undefined` && { DataTransferItemList },
-		...typeof DragEvent != `undefined` && { DragEvent },
-
-		// Page history interfaces
-		...typeof BeforeUnloadEvent != `undefined` && { BeforeUnloadEvent },
-		...typeof HashChangeEvent != `undefined` && { HashChangeEvent },
-		...typeof History != `undefined` && { History },
-		...typeof Location != `undefined` && { Location },
-		...typeof PageRevealEvent != `undefined` && { PageRevealEvent },
-		...typeof PageSwapEvent != `undefined` && { PageSwapEvent },
-		...typeof PageTransitionEvent != `undefined` && { PageTransitionEvent },
-		...typeof PopStateEvent != `undefined` && { PopStateEvent },
-
-		// Web Components interfaces
-		...typeof CustomElementRegistry != `undefined` && { CustomElementRegistry },
-
-		// Miscellaneous and supporting interfaces
-		...typeof DOMStringList != `undefined` && { DOMStringList },
-		...typeof DOMStringMap != `undefined` && { DOMStringMap },
-		...typeof ErrorEvent != `undefined` && { ErrorEvent },
-		...typeof HTMLAllCollection != `undefined` && { HTMLAllCollection },
-		...typeof MimeType != `undefined` && { MimeType },
-		...typeof MimeTypeArray != `undefined` && { MimeTypeArray },
-		...typeof PromiseRejectionEvent != `undefined` && { PromiseRejectionEvent },
-
-		// Interfaces belonging to other APIs
-			// Web storage interfaces
-			...typeof Storage != `undefined` && { Storage },
-			...typeof StorageEvent != `undefined` && { StorageEvent },
-
-			// Web Workers interfaces
-			...typeof BroadcastChannel != `undefined` && { BroadcastChannel },
-			...typeof DedicatedWorkerGlobalScope != `undefined` && { DedicatedWorkerGlobalScope },
-			...typeof MessageChannel != `undefined` && { MessageChannel },
-			...typeof MessageEvent != `undefined` && { MessageEvent },
-			...typeof MessagePort != `undefined` && { MessagePort },
-			...typeof SharedWorker != `undefined` && { SharedWorker },
-			...typeof SharedWorkerGlobalScope != `undefined` && { SharedWorkerGlobalScope },
-			...typeof Worker != `undefined` && { Worker },
-			...typeof WorkerGlobalScope != `undefined` && { WorkerGlobalScope },
-			...typeof WorkerLocation != `undefined` && { WorkerLocation },
-			...typeof WorkerNavigator != `undefined` && { WorkerNavigator },
-
-			// WebSocket interfaces
-			...typeof CloseEvent != `undefined` && { CloseEvent },
-			...typeof WebSocket != `undefined` && { WebSocket },
-
-			// Server-sent events interfaces
-			...typeof EventSource != `undefined` && { EventSource },
-
-	// Node.js Internal Symbols
-	'<Node.js Event "type" symbol>': NodeJs_Event_symbol_type,
-	'<Node.js Event "kTarget" symbol>': NodeJs_Event_symbol_kTarget,
-	'<Node.js Event "kIsBeingDispatched" symbol>': NodeJs_Event_symbol_kIsBeingDispatched,
-	'<Node.js Event "kInPassiveListener" symbol>': NodeJs_Event_symbol_kInPassiveListener,
-
-	...angleNames({
-		TypedArray,
-		GeneratorFunction,
-		AsyncGenerator,
-		AsyncFunction,
-		GeneratorPrototype,
-		ArrayIteratorPrototype,
-		StringIteratorPrototype,
-		MapIteratorPrototype,
-		SetIteratorPrototype,
-		IteratorHelperPrototype,
-		RegExpStringIteratorHelper,
-		SegmentsPrototype,
-		SegmentsIteratorPrototype,
-		WrapForValidIteratorPrototype,
-		V8ErrorStackGetter: v8ErrorStackDescriptor?.get,
-		V8ErrorStackSetter: v8ErrorStackDescriptor?.set,
-		NodeJsBlobHandleSymbol,
-		NodeJsBlobLengthSymbol,
-		NodeJsBlobTypeSymbol,
-		NodeJsInternalBlob,
-		NodeJsFileStateSymbol,
-		NodeJsFileState,
-		NodeJsDOMExceptionMessagingCloneSymbol,
-		NodeJsDOMExceptionMessagingDeserializeSymbol,
-		NodeJsEventTargetNewListenerSymbol,
-		NodeJsEventTargetRemoveListenerSymbol,
-		NodeJsEventTargetRemoveWeakListenerHelperSymbol,
-		NodeJsEventTargetCreateEventSymbol,
-		NodeJsAbortControllerMakeTransferableSymbol,
-		NodeJsAbortSignalMessagingTransferSymbol,
-		NodeJsAbortSignalMessagingTransferListSymbol,
-		NodeJsEventTargetEventsSymbol,
-		NodeJsEventTargetEventsMaxEventTargetListenersSymbol,
-		NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol,
-		NodeJsEventTargetHandlersSymbol,
-		NodeJsSafeMap
-	})
-}, builtinFriendlyNames), builtinFriendlyNames)
+	mapFriendlyNames(queue, builtinFriendlyNames)
+}
 
 builtinFriendlyNames.map.set(globalThis, `globalThis`)
 
