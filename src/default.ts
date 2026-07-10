@@ -119,9 +119,16 @@ const NodeJs_Event_symbol_kTarget = eventInstanceSymbolKeys.find(symbol => symbo
 const NodeJs_Event_symbol_kIsBeingDispatched = eventInstanceSymbolKeys.find(symbol => symbol.description == `kIsBeingDispatched`)
 const NodeJs_Event_symbol_kInPassiveListener = eventInstanceSymbolKeys.find(symbol => symbol.description == `kInPassiveListener`)
 
-const getBlobAttributes = (value: unknown): { size: number, type: string } | undefined =>
-	BlobGetSize && BlobGetType &&
-	tryCatch(() => ({ size: BlobGetSize(value), type: BlobGetType(value) }))
+const makeAttributeGetter = (
+	getters: Record<string, ((v: any) => any) | undefined>
+): (value: any) => [ string, any ][] => {
+	const entries = Object.entries(getters).filter((entry): entry is [ string, (v: any) => any ] => !!entry[1])
+
+	return (value: any) =>
+		entries.flatMap(([ name, getter ]) => tryCatch((): [ string, any ][] => [ [ name, getter(value) ] ], () => []))
+}
+
+const getBlobAttributes = makeAttributeGetter({ size: BlobGetSize, type: BlobGetType })
 
 const getFileAttributes = (value: unknown): { size: number, type: string, lastModified: number, name: string, webkitRelativePath?: string } | undefined =>
 	BlobGetSize && BlobGetType && FileGetLastModified && FileGetName &&
@@ -181,15 +188,6 @@ const RequestGetSignal = getGetter(Request.prototype, `signal`)
 const RequestGetBody = getGetter(Request.prototype, `body`)
 const RequestBodyUsed = getGetter(Request.prototype, `bodyUsed`)
 const RequestGetDuplex = getGetter(Request.prototype, `duplex`)
-
-const makeAttributeGetter = (
-	getters: Record<string, ((v: any) => any) | undefined>
-): (value: any) => [ string, any ][] => {
-	const entries = Object.entries(getters).filter((entry): entry is [ string, (v: any) => any ] => !!entry[1])
-
-	return (value: any) =>
-		entries.flatMap(([ name, getter ]) => tryCatch((): [ string, any ][] => [ [ name, getter(value) ] ], () => []))
-}
 
 const getRequestAttributes = makeAttributeGetter({
 	method: RequestGetMethod,
@@ -667,14 +665,14 @@ export const toJsodd = (value: unknown, {
 					o += `Date `
 
 				const fileAttributes = getFileAttributes(value)
-				let blobAttributes
+				let blobAttributes: [ string, any ][] | undefined
 
 				if (fileAttributes)
 					o += `File `
 				else {
 					blobAttributes = getBlobAttributes(value)
 
-					if (blobAttributes)
+					if (blobAttributes.length)
 						o += `Blob `
 				}
 
@@ -854,10 +852,8 @@ export const toJsodd = (value: unknown, {
 
 					if (fileAttributes.webkitRelativePath != undefined)
 						stringifyField(`<webkitRelativePath>`, fileAttributes.webkitRelativePath)
-				} else if (blobAttributes) {
-					stringifyField(`<size>`, blobAttributes.size)
-					stringifyField(`<type>`, blobAttributes.type)
-				}
+				} else if (blobAttributes)
+					stringifyAttributes(blobAttributes)
 
 				if (headersEntries) {
 					for (const [ index, key, value ] of headersEntries) {
@@ -936,7 +932,7 @@ export const toJsodd = (value: unknown, {
 						Date.prototype
 					: fileAttributes ?
 						File.prototype
-					: blobAttributes ?
+					: blobAttributes?.length ?
 						Blob.prototype
 					: headersEntries ?
 						Headers.prototype
@@ -963,7 +959,7 @@ export const toJsodd = (value: unknown, {
 					sharedArrayBufferByteLength != undefined || typedArrayAttributes ||
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
 					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue ||
-					domExceptionAttributes || dateTime != undefined || blobAttributes || headersEntries?.length ||
+					domExceptionAttributes || dateTime != undefined || blobAttributes?.length || headersEntries?.length ||
 					requestAttributes.length || promiseRejectionEventAttributes || eventAttributes.length ||
 					responseAttributes.length
 				)
