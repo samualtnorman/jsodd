@@ -526,7 +526,7 @@ export const toJsodd = (value: unknown, {
 		else if (isSymbol(value))
 			o += symbolToJsodd(value, friendlyNames, valueName)
 		else if (JSON.isRawJSON?.(value)) {
-			o += `RawJSON ${JSON.stringify(value.rawJSON)}`
+			o += `JSON.rawJSON(${JSON.stringify(value.rawJSON)})`
 		} else if (isObject(value)) {
 			if (friendlyNames.map.has(value))
 				o += friendlyNames.map.get(value)!
@@ -1573,9 +1573,7 @@ if (import.meta.vitest) {
 
 	if (JSON.rawJSON) {
 		test(`raw json`, () => {
-			expect(toJsodd(JSON.rawJSON!("10000000000000001"))).toMatchInlineSnapshot(`
-				"RawJSON "10000000000000001""
-			`)
+			expect(toJsodd(JSON.rawJSON!("10000000000000001"))).toMatchInlineSnapshot(`"JSON.rawJSON("10000000000000001")"`)
 		})
 	}
 
