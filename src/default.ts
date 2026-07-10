@@ -334,6 +334,8 @@ const makeFriendlyNamesQueue = (values: Record<string, unknown>, friendlyNames: 
 	})
 
 const mapFriendlyNames = (queue: FriendlyNamesQueue, friendlyNames: FriendlyNames): void => {
+	let symbolReferenceCount = 0
+
 	const nameKey = (key: string | symbol): string => {
 		if (typeof key == `string`)
 			return key
@@ -347,7 +349,7 @@ const mapFriendlyNames = (queue: FriendlyNamesQueue, friendlyNames: FriendlyName
 			return `[${friendlyNames.map.get(key)}]`
 
 		const name =
-			`Symbol(${key.description == null ? `` : JSON.stringify(key.description)}) *${++friendlyNames.symbolReferenceCount}`
+			`Symbol(${key.description == null ? `` : JSON.stringify(key.description)}) #${++symbolReferenceCount}`
 
 		friendlyNames.map.set(key, name)
 
@@ -1433,26 +1435,26 @@ if (import.meta.vitest) {
 	test(`symbol as key and value`, () => {
 		const symbol = Symbol(`foo`)
 
-		expect(toJsodd({ [symbol]: symbol })).toMatchPattern`
-			{
-				[Symbol("foo") *${/\d/}]: Symbol("foo") *${0}
-			}
-		`
+		expect(toJsodd({ [symbol]: symbol })).toMatchInlineSnapshot(`
+			"{
+				[Symbol("foo") *1]: Symbol("foo") *1
+			}"
+		`)
 	})
 
 	test(`symbol used as key twice`, () => {
 		const symbol = Symbol(`foo`)
 
-		expect(toJsodd({ a: { [symbol]: symbol }, b: { [symbol]: symbol } })).toMatchPattern`
-			{
+		expect(toJsodd({ a: { [symbol]: symbol }, b: { [symbol]: symbol } })).toMatchInlineSnapshot(`
+			"{
 				a: {
-					[Symbol("foo") *${/\d/}]: Symbol("foo") *${0}
+					[Symbol("foo") *1]: Symbol("foo") *1
 				}
 				b: {
-					[Symbol("foo") *${0}]: Symbol("foo") *${0}
+					[Symbol("foo") *1]: Symbol("foo") *1
 				}
-			}
-		`
+			}"
+		`)
 	})
 
 	test(`symbol getter`, () => {
@@ -1646,13 +1648,13 @@ if (import.meta.vitest) {
 		const b = Symbol(`b`)
 		const c = Symbol(`c`)
 
-		expect(toJsodd({ [a]: b, [b]: c, [c]: a })).toMatchPattern`
-			{
-				[Symbol("a") *${/\d/}]: Symbol("b")
-				[.[Symbol("a") *${0}]]: Symbol("c")
-				[.[.[Symbol("a") *${0}]]]: Symbol("a") *${0}
-			}
-		`
+		expect(toJsodd({ [a]: b, [b]: c, [c]: a })).toMatchInlineSnapshot(`
+			"{
+				[Symbol("a") *1]: Symbol("b")
+				[.[Symbol("a") *1]]: Symbol("c")
+				[.[.[Symbol("a") *1]]]: Symbol("a") *1
+			}"
+		`)
 	})
 
 	test(`nested symbol key to symbol key to symbol key`, () => {
@@ -1660,15 +1662,15 @@ if (import.meta.vitest) {
 		const b = Symbol(`b`)
 		const c = Symbol(`c`)
 
-		expect(toJsodd({ foo: { [a]: b, [b]: c, [c]: a } })).toMatchPattern`
-			{
+		expect(toJsodd({ foo: { [a]: b, [b]: c, [c]: a } })).toMatchInlineSnapshot(`
+			"{
 				foo: {
-					[Symbol("a") *${/\d/}]: Symbol("b")
-					[.foo[Symbol("a") *${0}]]: Symbol("c")
-					[.foo[.foo[Symbol("a") *${0}]]]: Symbol("a") *${0}
+					[Symbol("a") *1]: Symbol("b")
+					[.foo[Symbol("a") *1]]: Symbol("c")
+					[.foo[.foo[Symbol("a") *1]]]: Symbol("a") *1
 				}
-			}
-		`
+			}"
+		`)
 	})
 
 	test(`object nested in symbol keys`, () => {
@@ -1741,18 +1743,18 @@ if (import.meta.vitest) {
 		`)
 	})
 
-	test(`no clashing symbol numbers`, () => {
+	test(`no clashing symbol references`, () => {
 		const s = Symbol(`foo`)
 
 		const friendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount: 0 }
 
 		mapFriendlyNames(makeFriendlyNamesQueue({ foo: Object.assign(Object.create(null), ({ [s]: 1 })) }, friendlyNames), friendlyNames)
 
-		expect(toJsodd({ [Symbol("bar")]: s }, { friendlyNames })).toMatchPattern`
-			{
-				[Symbol("bar") *${/\d/}]: Symbol("foo") *${([ a ]) => String(Number(a) - 1)}
-			}
-		`
+		expect(toJsodd({ [Symbol("bar")]: s }, { friendlyNames })).toMatchInlineSnapshot(`
+			"{
+				[Symbol("bar") *1]: Symbol("foo") #1
+			}"
+		`)
 	})
 
 	test(`terse method`, () => {
@@ -1987,8 +1989,8 @@ if (import.meta.vitest) {
 	})
 
 	test(`request`, () => {
-		expect(toJsodd(new Request(`https://samual.uk/`, { headers: { foo: `bar` } }))).toMatchPattern`
-			Request {
+		expect(toJsodd(new Request(`https://samual.uk/`, { headers: { foo: `bar` } }))).toMatchInlineSnapshot(`
+			"Request {
 				<method>: "GET"
 				<url>: "https://samual.uk/"
 				<headers>: Headers {
@@ -2015,16 +2017,16 @@ if (import.meta.vitest) {
 					[<NodeJsEventTargetHandlersSymbol>]: Map {
 						<prototype>: <NodeJsSafeMap>.prototype
 					}
-					[Symbol("kAborted") *${/\d/}]: false
-					[Symbol("kReason") *${/\d/}]: undefined
-					[Symbol("kComposite") *${/\d/}]: false
+					[Symbol("kAborted") *1]: false
+					[Symbol("kReason") *2]: undefined
+					[Symbol("kComposite") *3]: false
 					<prototype>: AbortSignal.prototype
 				}
 				<body>: null
 				<bodyUsed>: false
 				<duplex>: "half"
-			}
-		`
+			}"
+		`)
 	})
 
 	test(`empty headers`, () => {
