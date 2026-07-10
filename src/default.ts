@@ -220,11 +220,8 @@ if (typeof PromiseRejectionEvent == `function`) {
 	PromiseRejectionEventGetReason = getGetter(PromiseRejectionEvent.prototype, `reason`)
 }
 
-const getPromiseRejectionEventAttributes = (value: unknown) =>
-	(PromiseRejectionEventGetPromise || PromiseRejectionEventGetReason) && tryCatch(() => ({
-		...PromiseRejectionEventGetPromise && { promise: PromiseRejectionEventGetPromise(value) },
-		...PromiseRejectionEventGetReason && { reason: PromiseRejectionEventGetReason(value) },
-	}))
+const getPromiseRejectionEventAttributes =
+	makeAttributeGetter({ promise: PromiseRejectionEventGetPromise, reason: PromiseRejectionEventGetReason })
 
 const EventGetTarget = getGetter(Event.prototype, `target`)
 const EventGetCurrentTarget = getGetter(Event.prototype, `currentTarget`)
@@ -677,7 +674,7 @@ export const toJsodd = (value: unknown, {
 
 				const promiseRejectionEventAttributes = getPromiseRejectionEventAttributes(value)
 
-				if (promiseRejectionEventAttributes)
+				if (promiseRejectionEventAttributes.length)
 					o += `PromiseRejectionEvent `
 
 				const eventAttributes = getEventAttributes(value)
@@ -829,12 +826,7 @@ export const toJsodd = (value: unknown, {
 				}
 
 				stringifyAttributes(requestAttributes)
-
-				if (promiseRejectionEventAttributes) {
-					for (const [ key, value ] of Object.entries(promiseRejectionEventAttributes))
-						stringifyField(`<${key}>`, value)
-				}
-
+				stringifyAttributes(promiseRejectionEventAttributes)
 				stringifyAttributes(eventAttributes)
 				stringifyAttributes(responseAttributes)
 
@@ -904,7 +896,7 @@ export const toJsodd = (value: unknown, {
 						Headers.prototype
 					: requestAttributes.length ?
 						Request.prototype
-					: promiseRejectionEventAttributes ?
+					: promiseRejectionEventAttributes.length ?
 						PromiseRejectionEvent.prototype
 					: eventAttributes.length ?
 						Event.prototype
@@ -926,7 +918,7 @@ export const toJsodd = (value: unknown, {
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
 					stringObjectValue != undefined || dataViewAttributes.length || symbolObjectValue ||
 					domExceptionAttributes.length || dateTime != undefined || blobAttributes?.length ||
-					headersEntries?.length || requestAttributes.length || promiseRejectionEventAttributes ||
+					headersEntries?.length || requestAttributes.length || promiseRejectionEventAttributes.length ||
 					eventAttributes.length || responseAttributes.length
 				)
 					o += `\n${indent()}`
