@@ -194,13 +194,13 @@ const getRequestAttributes = makeAttributeGetter({
 	duplex: RequestGetDuplex
 })
 
-const PromiseRejectionEventGetPromise = typeof PromiseRejectionEvent == `function`
-	? getGetter(PromiseRejectionEvent.prototype, `promise`)
-	: undefined
+let PromiseRejectionEventGetPromise: ((v: any) => Promise<any>) | undefined
+let PromiseRejectionEventGetReason: ((v: any) => any) | undefined
 
-const PromiseRejectionEventGetReason = typeof PromiseRejectionEvent == `function`
-	? getGetter(PromiseRejectionEvent.prototype, `reason`)
-	: undefined
+if (typeof PromiseRejectionEvent == `function`) {
+	PromiseRejectionEventGetPromise = getGetter(PromiseRejectionEvent.prototype, `promise`)
+	PromiseRejectionEventGetReason = getGetter(PromiseRejectionEvent.prototype, `reason`)
+}
 
 const PromiseThen =
 	(...args: [ target: any, onResolve?: (value: any) => any, onReject?: (value: any) => any ]): Promise<unknown> =>
