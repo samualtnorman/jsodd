@@ -27,6 +27,8 @@ const getGetter = <T extends object, TKey extends keyof T | (string & {}) | symb
 		return normaliseGetter(getter) as TKey extends keyof T ? ((v: any) => T[TKey]) | undefined : ((v: any) => unknown) | undefined
 }
 
+const getSymbol = (symbols: symbol[], description: string) => symbols.find(symbol => symbol.description == description)
+
 const TypedArray = getPrototype(Uint8Array) as {
 	prototype: { buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, [Symbol.toStringTag]: string }
 }
@@ -74,50 +76,50 @@ const TypedArrayGetTag = getGetter(TypedArray.prototype, Symbol.toStringTag)
 
 const emptyBlob: any = new Blob
 const nodeBlobSymbolKeys = Object.getOwnPropertySymbols(emptyBlob)
-const NodeJsBlobHandleSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kHandle`)
-const NodeJsBlobLengthSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kLength`)
-const NodeJsBlobTypeSymbol = nodeBlobSymbolKeys.find(symbol => symbol.description == `kType`)
+const NodeJsBlobHandleSymbol = getSymbol(nodeBlobSymbolKeys, `kHandle`)
+const NodeJsBlobLengthSymbol = getSymbol(nodeBlobSymbolKeys, `kLength`)
+const NodeJsBlobTypeSymbol = getSymbol(nodeBlobSymbolKeys, `kType`)
 const NodeJsInternalBlob: object | undefined = NodeJsBlobHandleSymbol && emptyBlob[NodeJsBlobHandleSymbol].constructor
 const BlobGetType = getGetter(Blob.prototype, `type`)
 const BlobGetSize = getGetter(Blob.prototype, `size`)
 const emptyFile: any = new File([], ``)
-const NodeJsFileStateSymbol = Object.getOwnPropertySymbols(emptyFile).find(symbol => symbol.description == `state`)
+const NodeJsFileStateSymbol = getSymbol(Object.getOwnPropertySymbols(emptyFile), `state`)
 const NodeJsFileState: object | undefined = NodeJsFileStateSymbol && emptyFile[NodeJsFileStateSymbol].constructor
 const FileGetName = getGetter(File.prototype, `name`)
 const FileGetLastModified = getGetter(File.prototype, `lastModified`)
 const FileGetWebkitRelativePath = getGetter(File.prototype, `webkitRelativePath`)
 
 const domExceptionPrototypeSymbolKeys = Object.getOwnPropertySymbols(DOMException.prototype)
-const NodeJsDOMExceptionMessagingCloneSymbol = domExceptionPrototypeSymbolKeys.find(symbol => symbol.description == `messaging_clone_symbol`)
-const NodeJsDOMExceptionMessagingDeserializeSymbol = domExceptionPrototypeSymbolKeys.find(symbol => symbol.description == `messaging_deserialize_symbol`)
+const NodeJsDOMExceptionMessagingCloneSymbol = getSymbol(domExceptionPrototypeSymbolKeys, `messaging_clone_symbol`)
+const NodeJsDOMExceptionMessagingDeserializeSymbol = getSymbol(domExceptionPrototypeSymbolKeys, `messaging_deserialize_symbol`)
 const eventTargetPrototypeSymbolKeys = Object.getOwnPropertySymbols(EventTarget.prototype)
-const NodeJsEventTargetNewListenerSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kNewListener`)
-const NodeJsEventTargetRemoveListenerSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kRemoveListener`)
-const NodeJsEventTargetRemoveWeakListenerHelperSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kRemoveWeakListenerHelper`)
-const NodeJsEventTargetCreateEventSymbol = eventTargetPrototypeSymbolKeys.find(symbol => symbol.description == `kCreateEvent`)
+const NodeJsEventTargetNewListenerSymbol = getSymbol(eventTargetPrototypeSymbolKeys, `kNewListener`)
+const NodeJsEventTargetRemoveListenerSymbol = getSymbol(eventTargetPrototypeSymbolKeys, `kRemoveListener`)
+const NodeJsEventTargetRemoveWeakListenerHelperSymbol = getSymbol(eventTargetPrototypeSymbolKeys, `kRemoveWeakListenerHelper`)
+const NodeJsEventTargetCreateEventSymbol = getSymbol(eventTargetPrototypeSymbolKeys, `kCreateEvent`)
 
 const abortControllerSymbolKeys = Object.getOwnPropertySymbols(AbortController)
-const NodeJsAbortControllerMakeTransferableSymbol = abortControllerSymbolKeys.find(symbol => symbol.description == `kMakeTransferable`)
+const NodeJsAbortControllerMakeTransferableSymbol = getSymbol(abortControllerSymbolKeys, `kMakeTransferable`)
 
 const abortSignalSymbolKeys = Object.getOwnPropertySymbols(AbortSignal.prototype)
-const NodeJsAbortSignalMessagingTransferSymbol = abortSignalSymbolKeys.find(symbol => symbol.description == `messaging_transfer_symbol`)
-const NodeJsAbortSignalMessagingTransferListSymbol = abortSignalSymbolKeys.find(symbol => symbol.description == `messaging_transfer_list_symbol`)
+const NodeJsAbortSignalMessagingTransferSymbol = getSymbol(abortSignalSymbolKeys, `messaging_transfer_symbol`)
+const NodeJsAbortSignalMessagingTransferListSymbol = getSymbol(abortSignalSymbolKeys, `messaging_transfer_list_symbol`)
 
 const eventTarget = new EventTarget
 const eventTargetInstanceSymbolKeys = Object.getOwnPropertySymbols(eventTarget)
-const NodeJsEventTargetEventsSymbol = eventTargetInstanceSymbolKeys.find(symbol => symbol.description == `kEvents`)
-const NodeJsEventTargetEventsMaxEventTargetListenersSymbol = eventTargetInstanceSymbolKeys.find(symbol => symbol.description == `events.maxEventTargetListeners`)
-const NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol = eventTargetInstanceSymbolKeys.find(symbol => symbol.description == `events.maxEventTargetListenersWarned`)
-const NodeJsEventTargetHandlersSymbol = eventTargetInstanceSymbolKeys.find(symbol => symbol.description == `kHandlers`)
+const NodeJsEventTargetEventsSymbol = getSymbol(eventTargetInstanceSymbolKeys, `kEvents`)
+const NodeJsEventTargetEventsMaxEventTargetListenersSymbol = getSymbol(eventTargetInstanceSymbolKeys, `events.maxEventTargetListeners`)
+const NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol = getSymbol(eventTargetInstanceSymbolKeys, `events.maxEventTargetListenersWarned`)
+const NodeJsEventTargetHandlersSymbol = getSymbol(eventTargetInstanceSymbolKeys, `kHandlers`)
 
 const NodeJsSafeMap: object | undefined = NodeJsEventTargetEventsSymbol && (eventTarget as any)[NodeJsEventTargetEventsSymbol]?.constructor
 
 const eventInstance = new Event(``)
 const eventInstanceSymbolKeys = Object.getOwnPropertySymbols(eventInstance)
-const NodeJs_Event_symbol_type = eventInstanceSymbolKeys.find(symbol => symbol.description == `type`)
-const NodeJs_Event_symbol_kTarget = eventInstanceSymbolKeys.find(symbol => symbol.description == `kTarget`)
-const NodeJs_Event_symbol_kIsBeingDispatched = eventInstanceSymbolKeys.find(symbol => symbol.description == `kIsBeingDispatched`)
-const NodeJs_Event_symbol_kInPassiveListener = eventInstanceSymbolKeys.find(symbol => symbol.description == `kInPassiveListener`)
+const NodeJs_Event_symbol_type = getSymbol(eventInstanceSymbolKeys, `type`)
+const NodeJs_Event_symbol_kTarget = getSymbol(eventInstanceSymbolKeys, `kTarget`)
+const NodeJs_Event_symbol_kIsBeingDispatched = getSymbol(eventInstanceSymbolKeys, `kIsBeingDispatched`)
+const NodeJs_Event_symbol_kInPassiveListener = getSymbol(eventInstanceSymbolKeys, `kInPassiveListener`)
 
 const makeAttributeGetter = (
 	getters: Record<string, ((v: any) => any) | undefined>
