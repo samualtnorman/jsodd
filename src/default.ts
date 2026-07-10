@@ -194,14 +194,6 @@ const getRequestAttributes = makeAttributeGetter({
 	duplex: RequestGetDuplex
 })
 
-let PromiseRejectionEventGetPromise: ((v: any) => Promise<any>) | undefined
-let PromiseRejectionEventGetReason: ((v: any) => any) | undefined
-
-if (typeof PromiseRejectionEvent == `function`) {
-	PromiseRejectionEventGetPromise = getGetter(PromiseRejectionEvent.prototype, `promise`)
-	PromiseRejectionEventGetReason = getGetter(PromiseRejectionEvent.prototype, `reason`)
-}
-
 const PromiseThen =
 	(...args: [ target: any, onResolve?: (value: any) => any, onReject?: (value: any) => any ]): Promise<unknown> =>
 		Promise.prototype.then.call(...args)
@@ -216,9 +208,21 @@ const suppressUncaughtReject = <T>(value: T) => {
 	return value
 }
 
+let PromiseRejectionEventGetPromise: ((v: any) => Promise<any>) | undefined
+let PromiseRejectionEventGetReason: ((v: any) => any) | undefined
+
+if (typeof PromiseRejectionEvent == `function`) {
+	const getPromise = getGetter(PromiseRejectionEvent.prototype, `promise`)
+
+	if (getPromise)
+		PromiseRejectionEventGetPromise = v => suppressUncaughtReject(getPromise(v))
+
+	PromiseRejectionEventGetReason = getGetter(PromiseRejectionEvent.prototype, `reason`)
+}
+
 const getPromiseRejectionEventAttributes = (value: unknown) =>
 	(PromiseRejectionEventGetPromise || PromiseRejectionEventGetReason) && tryCatch(() => ({
-		...PromiseRejectionEventGetPromise && { promise: suppressUncaughtReject(PromiseRejectionEventGetPromise(value)) },
+		...PromiseRejectionEventGetPromise && { promise: PromiseRejectionEventGetPromise(value) },
 		...PromiseRejectionEventGetReason && { reason: PromiseRejectionEventGetReason(value) },
 	}))
 
