@@ -182,26 +182,35 @@ const RequestGetBody = getGetter(Request.prototype, `body`)
 const RequestBodyUsed = getGetter(Request.prototype, `bodyUsed`)
 const RequestGetDuplex = getGetter(Request.prototype, `duplex`)
 
-const getRequestAttributes = (value: unknown) => tryCatch(() => ({
-	...RequestGetMethod && { method: RequestGetMethod(value) },
-	...RequestGetUrl && { url: RequestGetUrl(value) },
-	...RequestGetHeaders && { headers: RequestGetHeaders(value) },
-	...RequestGetDestination && { destination: RequestGetDestination(value) },
-	...RequestGetReferrer && { referrer: RequestGetReferrer(value) },
-	...RequestGetReferrerPolicy && { referrerPolicy: RequestGetReferrerPolicy(value) },
-	...RequestGetMode && { mode: RequestGetMode(value) },
-	...RequestGetCredentials && { credentials: RequestGetCredentials(value) },
-	...RequestGetCache && { cache: RequestGetCache(value) },
-	...RequestGetRedirect && { redirect: RequestGetRedirect(value) },
-	...RequestGetIntegrity && { integrity: RequestGetIntegrity(value) },
-	...RequestGetKeepalive && { keepalive: RequestGetKeepalive(value) },
-	...RequestGetIsReloadNavigation && { isReloadNavigation: RequestGetIsReloadNavigation(value) },
-	...RequestGetIsHistoryNavigation && { isHistoryNavigation: RequestGetIsHistoryNavigation(value) },
-	...RequestGetSignal && { signal: RequestGetSignal(value) },
-	...RequestGetBody && { body: RequestGetBody(value) },
-	...RequestBodyUsed && { bodyUsed: RequestBodyUsed(value) },
-	...RequestGetDuplex && { duplex: RequestGetDuplex(value) }
-}))
+const makeAttributeGetter = (
+	getters: Record<string, ((v: any) => any) | undefined>
+): (value: any) => [ string, any ][] => {
+	const entries = Object.entries(getters).filter((entry): entry is [ string, (v: any) => any ] => !!entry[1])
+
+	return (value: any) =>
+		entries.flatMap(([ name, getter ]) => tryCatch((): [ string, any ][] => [ [ name, getter(value) ] ], () => []))
+}
+
+const getRequestAttributes = makeAttributeGetter({
+	method: RequestGetMethod,
+	url: RequestGetUrl,
+	headers: RequestGetHeaders,
+	destination: RequestGetDestination,
+	referrer: RequestGetReferrer,
+	referrerPolicy: RequestGetReferrerPolicy,
+	mode: RequestGetMode,
+	credentials: RequestGetCredentials,
+	cache: RequestGetCache,
+	redirect: RequestGetRedirect,
+	integrity: RequestGetIntegrity,
+	keepalive: RequestGetKeepalive,
+	isReloadNavigation: RequestGetIsReloadNavigation,
+	isHistoryNavigation: RequestGetIsHistoryNavigation,
+	signal: RequestGetSignal,
+	body: RequestGetBody,
+	bodyUsed: RequestBodyUsed,
+	duplex: RequestGetDuplex
+})
 
 const PromiseRejectionEventGetPromise = typeof PromiseRejectionEvent == `function`
 	? getGetter(PromiseRejectionEvent.prototype, `promise`)
@@ -243,15 +252,6 @@ const EventGetBubbles = getGetter(Event.prototype, `bubbles`)
 const EventGetComposed = getGetter(Event.prototype, `composed`)
 const EventGetEventPhase = getGetter(Event.prototype, `eventPhase`)
 const EventGetCancelBubble = getGetter(Event.prototype, `cancelBubble`)
-
-const makeAttributeGetter = (
-	getters: Record<string, ((v: any) => any) | undefined>
-): (value: any) => [ string, any ][] => {
-	const entries = Object.entries(getters).filter((entry): entry is [ string, (v: any) => any ] => !!entry[1])
-
-	return (value: any) =>
-		entries.flatMap(([ name, getter ]) => tryCatch((): [ string, any ][] => [ [ name, getter(value) ] ], () => []))
-}
 
 const getEventAttributes = makeAttributeGetter({
 	target: EventGetTarget,
@@ -689,7 +689,7 @@ export const toJsodd = (value: unknown, {
 
 				const requestAttributes = getRequestAttributes(value)
 
-				if (requestAttributes)
+				if (requestAttributes.length)
 					o += `Request `
 
 				const promiseRejectionEventAttributes = getPromiseRejectionEventAttributes(value)
@@ -868,10 +868,7 @@ export const toJsodd = (value: unknown, {
 					}
 				}
 
-				if (requestAttributes) {
-					for (const [ key, value ] of Object.entries(requestAttributes))
-						stringifyField(`<${key}>`, value)
-				}
+				stringifyAttributes(requestAttributes)
 
 				if (promiseRejectionEventAttributes) {
 					for (const [ key, value ] of Object.entries(promiseRejectionEventAttributes))
@@ -943,7 +940,7 @@ export const toJsodd = (value: unknown, {
 						Blob.prototype
 					: headersEntries ?
 						Headers.prototype
-					: requestAttributes ?
+					: requestAttributes.length ?
 						Request.prototype
 					: promiseRejectionEventAttributes ?
 						PromiseRejectionEvent.prototype
@@ -967,7 +964,7 @@ export const toJsodd = (value: unknown, {
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
 					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue ||
 					domExceptionAttributes || dateTime != undefined || blobAttributes || headersEntries?.length ||
-					requestAttributes || promiseRejectionEventAttributes || eventAttributes.length ||
+					requestAttributes.length || promiseRejectionEventAttributes || eventAttributes.length ||
 					responseAttributes.length
 				)
 					o += `\n${indent()}`
