@@ -331,7 +331,7 @@ const makeFriendlyNamesQueue = (values: Record<string, unknown>, friendlyNames: 
 		return []
 	})
 
-const mapFriendlyNames = (values: Record<string, unknown>, friendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount: 0 }): FriendlyNames => {
+const mapFriendlyNames = (queue: FriendlyNamesQueue, friendlyNames: FriendlyNames): void => {
 	const nameKey = (key: string | symbol): string => {
 		if (typeof key == `string`)
 			return key
@@ -351,8 +351,6 @@ const mapFriendlyNames = (values: Record<string, unknown>, friendlyNames: Friend
 
 		return `[${name}]`
 	}
-
-	const queue = makeFriendlyNamesQueue(values, friendlyNames)
 
 	while (queue.length) {
 		const item = queue.shift()!
@@ -399,8 +397,6 @@ const mapFriendlyNames = (values: Record<string, unknown>, friendlyNames: Friend
 			queue.push({ name: prototypeName, value: prototype })
 		}
 	}
-
-	return friendlyNames
 }
 
 const functionNameOrLengthDescriptorIsProper = (function_: object, descriptor: PropertyDescriptor) =>
@@ -428,7 +424,9 @@ const angleNames = (toAngleName: Record<string, object | symbol | undefined>): R
 			.flatMap(([ key, value ]) => value ? [ [ `<${key}>`, value ] ] : [])
 	)
 
-const builtinFriendlyNames = mapFriendlyNames({
+const builtinFriendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount: 0 }
+
+mapFriendlyNames(makeFriendlyNamesQueue({
 	// Standard built-in objects (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects)
 		// Fundamental objects
 		Function,
@@ -790,7 +788,7 @@ const builtinFriendlyNames = mapFriendlyNames({
 		NodeJsEventTargetHandlersSymbol,
 		NodeJsSafeMap
 	})
-})
+}, builtinFriendlyNames), builtinFriendlyNames)
 
 builtinFriendlyNames.map.set(globalThis, `globalThis`)
 
@@ -1744,10 +1742,11 @@ if (import.meta.vitest) {
 	test(`no clashing symbol numbers`, () => {
 		const s = Symbol(`foo`)
 
-		expect(toJsodd(
-			{ [Symbol("bar")]: s },
-			{ friendlyNames: mapFriendlyNames({ foo: Object.assign(Object.create(null), ({ [s]: 1 })) }) }
-		)).toMatchPattern`
+		const friendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount: 0 }
+
+		mapFriendlyNames(makeFriendlyNamesQueue({ foo: Object.assign(Object.create(null), ({ [s]: 1 })) }, friendlyNames), friendlyNames)
+
+		expect(toJsodd({ [Symbol("bar")]: s }, { friendlyNames })).toMatchPattern`
 			{
 				[Symbol("bar") *${/\d/}]: Symbol("foo") *${([ a ]) => String(Number(a) - 1)}
 			}
