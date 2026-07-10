@@ -136,16 +136,12 @@ const getFileAttributes = makeAttributeGetter({
 	webkitRelativePath: FileGetWebkitRelativePath
 })
 
-const getTypedArrayAttributes = (value: unknown):
-	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number, length: number, tag: string } | undefined =>
-	TypedArrayGetBuffer && TypedArrayGetByteLength && TypedArrayGetByteOffset && TypedArrayGetLength &&
-		TypedArrayGetTag && tryCatch(() => ({
-			buffer: TypedArrayGetBuffer(value),
-			byteLength: TypedArrayGetByteLength(value),
-			byteOffset: TypedArrayGetByteOffset(value),
-			length: TypedArrayGetLength(value),
-			tag: TypedArrayGetTag(value)
-		}))
+const getTypedArrayAttributes = makeAttributeGetter({
+	buffer: TypedArrayGetBuffer,
+	byteLength: TypedArrayGetByteLength,
+	byteOffset: TypedArrayGetByteOffset,
+	length: TypedArrayGetLength,
+})
 
 const getDataViewAttributes = (value: unknown):
 	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number } | undefined =>
@@ -603,9 +599,10 @@ export const toJsodd = (value: unknown, {
 					o += `SharedArrayBuffer `
 
 				const typedArrayAttributes = getTypedArrayAttributes(value)
+				let typedArrayTag
 
-				if (typedArrayAttributes)
-					o += `${typedArrayAttributes.tag} `
+				if (typedArrayAttributes.length)
+					o += `${(typedArrayTag = TypedArrayGetTag?.(value)) ?? `TypedArray`} `
 
 				const dataViewAttributes = getDataViewAttributes(value)
 
@@ -697,7 +694,7 @@ export const toJsodd = (value: unknown, {
 				if (responseAttributes.length)
 					o += `Response `
 
-				const isArray = Array.isArray(value) || typedArrayAttributes
+				const isArray = Array.isArray(value) || typedArrayAttributes.length
 
 				o += isArray ? `[` : `{`
 				indentLevel++
@@ -806,18 +803,6 @@ export const toJsodd = (value: unknown, {
 					}>`
 				}
 
-				if (typedArrayAttributes) {
-					o += `\n${indent()}<buffer>: `
-					stringify(typedArrayAttributes.buffer, `${valueName}.<buffer>`)
-					o += `\n${indent()}<byteLength>: ${typedArrayAttributes.byteLength}\n${indent()}<byteOffset>: ${typedArrayAttributes.byteOffset}\n${indent()}<length>: ${typedArrayAttributes.length}`
-				}
-
-				if (dataViewAttributes) {
-					o += `\n${indent()}<buffer>: `
-					stringify(dataViewAttributes.buffer, `${valueName}.<buffer>`)
-					o += `\n${indent()}<byteLength>: ${dataViewAttributes.byteLength}\n${indent()}<byteOffset>: ${dataViewAttributes.byteOffset}`
-				}
-
 				const stringifyField = (key: string, value: unknown): void => {
 					o += `\n${indent()}${key}: `
 					stringify(value, `${valueName}.${key}`)
@@ -826,6 +811,14 @@ export const toJsodd = (value: unknown, {
 				const stringifyAttributes = (entries: [ name: string, value: any ][]) => {
 					for (const [ name, value ] of entries)
 						stringifyField(`<${name}>`, value)
+				}
+
+				stringifyAttributes(typedArrayAttributes)
+
+				if (dataViewAttributes) {
+					o += `\n${indent()}<buffer>: `
+					stringify(dataViewAttributes.buffer, `${valueName}.<buffer>`)
+					o += `\n${indent()}<byteLength>: ${dataViewAttributes.byteLength}\n${indent()}<byteOffset>: ${dataViewAttributes.byteOffset}`
 				}
 
 				if (domExceptionAttributes) {
@@ -883,21 +876,23 @@ export const toJsodd = (value: unknown, {
 						ArrayBuffer.prototype
 					: sharedArrayBufferByteLength ?
 						SharedArrayBuffer.prototype
-					: typedArrayAttributes ?
-						{
-							Int8Array: Int8Array.prototype,
-							Uint8Array: Uint8Array.prototype,
-							Uint8ClampedArray: Uint8ClampedArray.prototype,
-							Int16Array: Int16Array.prototype,
-							Uint16Array: Uint16Array.prototype,
-							Int32Array: Int32Array.prototype,
-							Uint32Array: Uint32Array.prototype,
-							BigInt64Array: BigInt64Array.prototype,
-							BigUint64Array: BigUint64Array.prototype,
-							Float16Array: Float16Array.prototype,
-							Float32Array: Float32Array.prototype,
-							Float64Array: Float64Array.prototype,
-						}[typedArrayAttributes.tag]
+					: typedArrayAttributes.length ?
+						typedArrayTag ?
+							{
+								Int8Array: Int8Array.prototype,
+								Uint8Array: Uint8Array.prototype,
+								Uint8ClampedArray: Uint8ClampedArray.prototype,
+								Int16Array: Int16Array.prototype,
+								Uint16Array: Uint16Array.prototype,
+								Int32Array: Int32Array.prototype,
+								Uint32Array: Uint32Array.prototype,
+								BigInt64Array: BigInt64Array.prototype,
+								BigUint64Array: BigUint64Array.prototype,
+								Float16Array: Float16Array.prototype,
+								Float32Array: Float32Array.prototype,
+								Float64Array: Float64Array.prototype,
+							}[typedArrayTag]
+						: undefined
 					: booleanObjectValue != undefined ?
 						Boolean.prototype
 					: numberObjectValue != undefined ?
@@ -940,7 +935,7 @@ export const toJsodd = (value: unknown, {
 				if (
 					keys.size || mapEntries?.length || prototype != expectedPrototype || stack != undefined ||
 					setValues?.length || arrayBufferByteLength != undefined ||
-					sharedArrayBufferByteLength != undefined || typedArrayAttributes ||
+					sharedArrayBufferByteLength != undefined || typedArrayAttributes.length ||
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
 					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue ||
 					domExceptionAttributes || dateTime != undefined || blobAttributes?.length || headersEntries?.length ||
