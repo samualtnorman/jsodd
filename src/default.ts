@@ -143,13 +143,9 @@ const getTypedArrayAttributes = makeAttributeGetter({
 	length: TypedArrayGetLength,
 })
 
-const getDataViewAttributes = (value: unknown):
-	{ buffer: ArrayBufferLike, byteLength: number, byteOffset: number } | undefined =>
-	DataViewGetBuffer && DataViewGetByteLength && DataViewGetByteOffset && tryCatch(() => ({
-		buffer: DataViewGetBuffer(value),
-		byteLength: DataViewGetByteLength(value),
-		byteOffset: DataViewGetByteOffset(value)
-	}))
+const getDataViewAttributes = makeAttributeGetter(
+	{ buffer: DataViewGetBuffer, byteLength: DataViewGetByteLength, byteOffset: DataViewGetByteOffset }
+)
 
 const DomExceptionGetName = getGetter(DOMException.prototype, `name`)
 const DomExceptionGetMessage = getGetter(DOMException.prototype, `message`)
@@ -606,7 +602,7 @@ export const toJsodd = (value: unknown, {
 
 				const dataViewAttributes = getDataViewAttributes(value)
 
-				if (dataViewAttributes)
+				if (dataViewAttributes.length)
 					o += `DataView `
 
 				const booleanObjectValue = tryCatch(() => Boolean.prototype.valueOf.call(value))
@@ -814,12 +810,7 @@ export const toJsodd = (value: unknown, {
 				}
 
 				stringifyAttributes(typedArrayAttributes)
-
-				if (dataViewAttributes) {
-					o += `\n${indent()}<buffer>: `
-					stringify(dataViewAttributes.buffer, `${valueName}.<buffer>`)
-					o += `\n${indent()}<byteLength>: ${dataViewAttributes.byteLength}\n${indent()}<byteOffset>: ${dataViewAttributes.byteOffset}`
-				}
+				stringifyAttributes(dataViewAttributes)
 
 				if (domExceptionAttributes) {
 					for (const [ key, value ] of Object.entries(domExceptionAttributes))
@@ -899,7 +890,7 @@ export const toJsodd = (value: unknown, {
 						Number.prototype
 					: stringObjectValue != undefined ?
 						String.prototype
-					: dataViewAttributes ?
+					: dataViewAttributes.length ?
 						DataView.prototype
 					: isWeakRef ?
 						WeakRef.prototype
@@ -937,7 +928,7 @@ export const toJsodd = (value: unknown, {
 					setValues?.length || arrayBufferByteLength != undefined ||
 					sharedArrayBufferByteLength != undefined || typedArrayAttributes.length ||
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
-					stringObjectValue != undefined || dataViewAttributes || symbolObjectValue ||
+					stringObjectValue != undefined || dataViewAttributes.length || symbolObjectValue ||
 					domExceptionAttributes || dateTime != undefined || blobAttributes?.length || headersEntries?.length ||
 					requestAttributes.length || promiseRejectionEventAttributes || eventAttributes.length ||
 					responseAttributes.length
