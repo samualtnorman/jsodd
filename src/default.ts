@@ -3,13 +3,14 @@ import type { AnyFunction, LaxPartial } from "@samual/types"
 
 const getDescriptor = Reflect.getOwnPropertyDescriptor
 const isExtensible = Reflect.isExtensible
+const getKeys = Reflect.ownKeys
 
 const isFunction = (value: unknown): value is AnyFunction => typeof value == `function`
 const isObject = (value: unknown): value is object => typeof value == `object` ? !!value : isFunction(value)
 const isSymbol = (value: unknown): value is symbol => typeof value == `symbol`
 
 /** `Object.isFrozen()` is bugged in V8, looks like it ignores the `.prototype` property or something. */
-const isActuallyFrozen = (target: object) => !isExtensible(target) && Reflect.ownKeys(target).every(key => {
+const isActuallyFrozen = (target: object) => !isExtensible(target) && getKeys(target).every(key => {
 	const { configurable, writable } = getDescriptor(target, key)!
 
 	return !(configurable || writable)
@@ -362,7 +363,7 @@ const mapFriendlyNames = (queue: FriendlyNamesQueue, friendlyNames: FriendlyName
 	while (queue.length) {
 		const item = queue.shift()!
 
-		for (const key of Reflect.ownKeys(item.value)) {
+		for (const key of getKeys(item.value)) {
 			const descriptor = getDescriptor(item.value, key)!
 			const keyName = nameKey(key)
 
@@ -545,7 +546,7 @@ export const toJsodd = (value: unknown, {
 				else if (!isExtensible(value))
 					o += `unextensible `
 
-				const keys = new Set(Reflect.ownKeys(value))
+				const keys = new Set(getKeys(value))
 
 				if (isFunction(value)) {
 					if (isTerseMethod)
