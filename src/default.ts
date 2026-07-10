@@ -130,11 +130,9 @@ const makeAttributeGetter = (
 
 const getBlobAttributes = makeAttributeGetter({ size: BlobGetSize, type: BlobGetType })
 
-const getFileAttributes = (value: unknown): { size: number, type: string, lastModified: number, name: string, webkitRelativePath?: string } | undefined =>
-	BlobGetSize && BlobGetType && FileGetLastModified && FileGetName &&
+const getFileAttributes = (value: unknown): { lastModified: number, name: string, webkitRelativePath?: string } | undefined =>
+	FileGetLastModified && FileGetName &&
 	tryCatch(() => ({
-		size: BlobGetSize(value),
-		type: BlobGetType(value),
 		lastModified: FileGetLastModified(value),
 		name: FileGetName(value),
 		...FileGetWebkitRelativePath && { webkitRelativePath: FileGetWebkitRelativePath(value) }
@@ -664,17 +662,13 @@ export const toJsodd = (value: unknown, {
 				if (dateTime != undefined)
 					o += `Date `
 
+				const blobAttributes = getBlobAttributes(value)
 				const fileAttributes = getFileAttributes(value)
-				let blobAttributes: [ string, any ][] | undefined
 
 				if (fileAttributes)
 					o += `File `
-				else {
-					blobAttributes = getBlobAttributes(value)
-
-					if (blobAttributes.length)
-						o += `Blob `
-				}
+				else if (blobAttributes.length)
+					o += `Blob `
 
 				const headersEntries = tryCatch(() =>
 					Headers.prototype.entries.call(value)
@@ -844,16 +838,15 @@ export const toJsodd = (value: unknown, {
 				if (dateTime != undefined)
 					stringifyField(`<time>`, dateTime)
 
+				stringifyAttributes(blobAttributes)
+
 				if (fileAttributes) {
-					stringifyField(`<size>`, fileAttributes.size)
-					stringifyField(`<type>`, fileAttributes.type)
 					stringifyField(`<lastModified>`, fileAttributes.lastModified)
 					stringifyField(`<name>`, fileAttributes.name)
 
 					if (fileAttributes.webkitRelativePath != undefined)
 						stringifyField(`<webkitRelativePath>`, fileAttributes.webkitRelativePath)
-				} else if (blobAttributes)
-					stringifyAttributes(blobAttributes)
+				}
 
 				if (headersEntries) {
 					for (const [ index, key, value ] of headersEntries) {
