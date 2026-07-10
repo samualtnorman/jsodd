@@ -151,12 +151,8 @@ const DomExceptionGetName = getGetter(DOMException.prototype, `name`)
 const DomExceptionGetMessage = getGetter(DOMException.prototype, `message`)
 const DomExceptionGetCode = getGetter(DOMException.prototype, `code`)
 
-const getDOMExceptionAttributes = (value: unknown): { name: string, message: string, code?: number } | undefined =>
-	DomExceptionGetName && DomExceptionGetMessage && tryCatch(() => ({
-		name: DomExceptionGetName(value),
-		message: DomExceptionGetMessage(value),
-		...DomExceptionGetCode && { code: DomExceptionGetCode(value) }
-	}))
+const getDOMExceptionAttributes =
+	makeAttributeGetter({ name: DomExceptionGetName, message: DomExceptionGetMessage, code: DomExceptionGetCode })
 
 const RequestGetMethod = getGetter(Request.prototype, `method`)
 const RequestGetUrl = getGetter(Request.prototype, `url`)
@@ -643,7 +639,7 @@ export const toJsodd = (value: unknown, {
 
 				const domExceptionAttributes = getDOMExceptionAttributes(value)
 
-				if (domExceptionAttributes)
+				if (domExceptionAttributes.length)
 					o += `DOMException `
 				else if (stack != undefined)
 					o += `Error `
@@ -811,11 +807,7 @@ export const toJsodd = (value: unknown, {
 
 				stringifyAttributes(typedArrayAttributes)
 				stringifyAttributes(dataViewAttributes)
-
-				if (domExceptionAttributes) {
-					for (const [ key, value ] of Object.entries(domExceptionAttributes))
-						stringifyField(`<${key}>`, value)
-				}
+				stringifyAttributes(domExceptionAttributes)
 
 				if (dateTime != undefined)
 					stringifyField(`<time>`, dateTime)
@@ -853,7 +845,7 @@ export const toJsodd = (value: unknown, {
 						Function.prototype
 					: Array.isArray(value) ?
 						Array.prototype
-					: domExceptionAttributes ?
+					: domExceptionAttributes.length ?
 						DOMException.prototype
 					: stack != undefined ?
 						Error.prototype
@@ -929,9 +921,9 @@ export const toJsodd = (value: unknown, {
 					sharedArrayBufferByteLength != undefined || typedArrayAttributes.length ||
 					booleanObjectValue != undefined || numberObjectValue != undefined ||
 					stringObjectValue != undefined || dataViewAttributes.length || symbolObjectValue ||
-					domExceptionAttributes || dateTime != undefined || blobAttributes?.length || headersEntries?.length ||
-					requestAttributes.length || promiseRejectionEventAttributes || eventAttributes.length ||
-					responseAttributes.length
+					domExceptionAttributes.length || dateTime != undefined || blobAttributes?.length ||
+					headersEntries?.length || requestAttributes.length || promiseRejectionEventAttributes ||
+					eventAttributes.length || responseAttributes.length
 				)
 					o += `\n${indent()}`
 
