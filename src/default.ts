@@ -319,7 +319,9 @@ export const cloneFriendlyNames = ({ map = new Map, symbolReferenceCount = 0 }: 
 type FriendlyNamesQueue = { name: string, value: object }[]
 
 const makeFriendlyNamesQueue = (values: Record<string, unknown>, friendlyNames: FriendlyNames): FriendlyNamesQueue =>
-	Object.entries(values).flatMap(([ name, value ]) => {
+	Object.getOwnPropertyNames(values).flatMap(name => {
+		const { value } = Reflect.getOwnPropertyDescriptor(values, name)
+
 		if (isSymbol(value))
 			friendlyNames.map.set(value, name)
 		else if (isObject(value)) {
