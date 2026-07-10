@@ -1,13 +1,15 @@
 import { tryCatch } from "@samual/try"
 import type { AnyFunction, LaxPartial } from "@samual/types"
 
+const getDescriptor = Reflect.getOwnPropertyDescriptor
+
 const isFunction = (value: unknown): value is AnyFunction => typeof value == `function`
 const isObject = (value: unknown): value is object => typeof value == `object` ? !!value : isFunction(value)
 const isSymbol = (value: unknown): value is symbol => typeof value == `symbol`
 
 /** `Object.isFrozen()` is bugged in V8, looks like it ignores the `.prototype` property or something. */
 const isActuallyFrozen = (target: object) => !Reflect.isExtensible(target) && Reflect.ownKeys(target).every(key => {
-	const { configurable, writable } = Reflect.getOwnPropertyDescriptor(target, key)!
+	const { configurable, writable } = getDescriptor(target, key)!
 
 	return !(configurable || writable)
 })
@@ -17,7 +19,7 @@ const getPrototype = Reflect.getPrototypeOf
 const normaliseGetter = <T>(getter: () => T) => (value: any) => getter.call(value)
 
 const getGetter = <T extends object, TKey extends keyof T | (string & {}) | symbol>(target: T, key: TKey) => {
-	const getter = Reflect.getOwnPropertyDescriptor(target, key as any)?.get
+	const getter = getDescriptor(target, key as any)?.get
 
 	if (getter)
 		return normaliseGetter(getter) as TKey extends keyof T ? ((v: any) => T[TKey]) | undefined : ((v: any) => unknown) | undefined
@@ -45,7 +47,7 @@ const WrapForValidIteratorPrototype = typeof Iterator == `function` ? getPrototy
 
 const RegExpGetSource = getGetter(RegExp.prototype, `source`)
 const RegExpGetFlags = getGetter(RegExp.prototype, `flags`)
-const v8ErrorStackDescriptor = Reflect.getOwnPropertyDescriptor(Error(), `stack`) as PropertyDescriptor<string | undefined> | undefined
+const v8ErrorStackDescriptor = getDescriptor(Error(), `stack`) as PropertyDescriptor<string | undefined> | undefined
 const ErrorGetStack = v8ErrorStackDescriptor?.get ? normaliseGetter(v8ErrorStackDescriptor.get) : getGetter(Error.prototype, `stack`)
 const ArrayBufferGetByteLength = getGetter(ArrayBuffer.prototype, `byteLength`)
 
@@ -320,7 +322,7 @@ type FriendlyNamesQueue = { name: string, value: object }[]
 
 const makeFriendlyNamesQueue = (values: Record<string, unknown>, friendlyNames: FriendlyNames): FriendlyNamesQueue =>
 	Object.getOwnPropertyNames(values).flatMap(name => {
-		const { value } = Reflect.getOwnPropertyDescriptor(values, name)
+		const { value } = getDescriptor(values, name)
 
 		if (isSymbol(value))
 			friendlyNames.map.set(value, name)
@@ -360,7 +362,7 @@ const mapFriendlyNames = (queue: FriendlyNamesQueue, friendlyNames: FriendlyName
 		const item = queue.shift()!
 
 		for (const key of Reflect.ownKeys(item.value)) {
-			const descriptor = Reflect.getOwnPropertyDescriptor(item.value, key)!
+			const descriptor = getDescriptor(item.value, key)!
 			const keyName = nameKey(key)
 
 			if ("value" in descriptor) {
@@ -550,7 +552,7 @@ export const toJsodd = (value: unknown, {
 					else {
 						o += `function `
 
-						const nameDescriptor = Reflect.getOwnPropertyDescriptor(value, `name`)
+						const nameDescriptor = getDescriptor(value, `name`)
 
 						if (functionNameDescriptorIsProper(value, nameDescriptor)) {
 							o += formatName(nameDescriptor.value)
@@ -558,7 +560,7 @@ export const toJsodd = (value: unknown, {
 						}
 					}
 
-					const lengthDescriptor = Reflect.getOwnPropertyDescriptor(value, `length`)
+					const lengthDescriptor = getDescriptor(value, `length`)
 
 					if (functionLengthDescriptorIsProper(value, lengthDescriptor)) {
 						o += `(${lengthDescriptor.value}) `
@@ -728,7 +730,7 @@ export const toJsodd = (value: unknown, {
 
 				const stringifyProperties = (value: object, keys: Set<string | symbol>, isStatic: boolean): void => {
 					for (const key of keys) {
-						const descriptor = Reflect.getOwnPropertyDescriptor(value, key)!
+						const descriptor = getDescriptor(value, key)!
 						prefix = `\n${indent()}`
 
 						if (isStatic)
@@ -750,8 +752,8 @@ export const toJsodd = (value: unknown, {
 							let isTerseMethod = false
 
 							if (isFunction(value) && !friendlyNames.map.has(value)) {
-								const nameDescriptor = Reflect.getOwnPropertyDescriptor(value, `name`)
-								const lengthDescriptor = Reflect.getOwnPropertyDescriptor(value, `length`)
+								const nameDescriptor = getDescriptor(value, `name`)
+								const lengthDescriptor = getDescriptor(value, `length`)
 
 								isTerseMethod = functionNameDescriptorIsProper(value, nameDescriptor) && nameDescriptor.value == expectedFunctionName && functionLengthDescriptorIsProper(value, lengthDescriptor)
 							}
@@ -1414,7 +1416,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`referencing builtin symbol key getter`, () => {
-		expect(toJsodd(Reflect.getOwnPropertyDescriptor(TypedArray.prototype, Symbol.toStringTag))).toMatchInlineSnapshot(`
+		expect(toJsodd(getDescriptor(TypedArray.prototype, Symbol.toStringTag))).toMatchInlineSnapshot(`
 			"{
 				get: <TypedArray>.prototype.<get [Symbol.toStringTag]>
 				set: undefined
