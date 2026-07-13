@@ -156,24 +156,25 @@ const DomExceptionGetCode = getGetter(DOMException.prototype, `code`)
 const getDOMExceptionAttributes =
 	makeAttributeGetter({ name: DomExceptionGetName, message: DomExceptionGetMessage, code: DomExceptionGetCode })
 
-const RequestGetMethod = getGetter(Request.prototype, `method`)
-const RequestGetUrl = getGetter(Request.prototype, `url`)
-const RequestGetHeaders = getGetter(Request.prototype, `headers`)
-const RequestGetDestination = getGetter(Request.prototype, `destination`)
-const RequestGetReferrer = getGetter(Request.prototype, `referrer`)
-const RequestGetReferrerPolicy = getGetter(Request.prototype, `referrerPolicy`)
-const RequestGetMode = getGetter(Request.prototype, `mode`)
-const RequestGetCredentials = getGetter(Request.prototype, `credentials`)
-const RequestGetCache = getGetter(Request.prototype, `cache`)
-const RequestGetRedirect = getGetter(Request.prototype, `redirect`)
-const RequestGetIntegrity = getGetter(Request.prototype, `integrity`)
-const RequestGetKeepalive = getGetter(Request.prototype, `keepalive`)
-const RequestGetIsReloadNavigation = getGetter(Request.prototype, `isReloadNavigation`)
-const RequestGetIsHistoryNavigation = getGetter(Request.prototype, `isHistoryNavigation`)
-const RequestGetSignal = getGetter(Request.prototype, `signal`)
-const RequestGetBody = getGetter(Request.prototype, `body`)
-const RequestBodyUsed = getGetter(Request.prototype, `bodyUsed`)
-const RequestGetDuplex = getGetter(Request.prototype, `duplex`)
+const RequestPrototype = Request.prototype
+const RequestGetMethod = getGetter(RequestPrototype, `method`)
+const RequestGetUrl = getGetter(RequestPrototype, `url`)
+const RequestGetHeaders = getGetter(RequestPrototype, `headers`)
+const RequestGetDestination = getGetter(RequestPrototype, `destination`)
+const RequestGetReferrer = getGetter(RequestPrototype, `referrer`)
+const RequestGetReferrerPolicy = getGetter(RequestPrototype, `referrerPolicy`)
+const RequestGetMode = getGetter(RequestPrototype, `mode`)
+const RequestGetCredentials = getGetter(RequestPrototype, `credentials`)
+const RequestGetCache = getGetter(RequestPrototype, `cache`)
+const RequestGetRedirect = getGetter(RequestPrototype, `redirect`)
+const RequestGetIntegrity = getGetter(RequestPrototype, `integrity`)
+const RequestGetKeepalive = getGetter(RequestPrototype, `keepalive`)
+const RequestGetIsReloadNavigation = getGetter(RequestPrototype, `isReloadNavigation`)
+const RequestGetIsHistoryNavigation = getGetter(RequestPrototype, `isHistoryNavigation`)
+const RequestGetSignal = getGetter(RequestPrototype, `signal`)
+const RequestGetBody = getGetter(RequestPrototype, `body`)
+const RequestBodyUsed = getGetter(RequestPrototype, `bodyUsed`)
+const RequestGetDuplex = getGetter(RequestPrototype, `duplex`)
 
 const getRequestAttributes = makeAttributeGetter({
 	method: RequestGetMethod,
@@ -897,7 +898,7 @@ export const toJsodd = (value: unknown, {
 					: headersEntries ?
 						Headers.prototype
 					: requestAttributes.length ?
-						Request.prototype
+						RequestPrototype
 					: promiseRejectionEventAttributes.length ?
 						PromiseRejectionEvent.prototype
 					: eventAttributes.length ?
