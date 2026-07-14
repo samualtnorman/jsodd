@@ -61,7 +61,8 @@ const nodeBlobSymbolKeys = getSymbols(emptyBlob)
 const NodeJsBlobHandleSymbol = getSymbol(nodeBlobSymbolKeys, `kHandle`)
 const emptyFile: any = new File([], ``)
 const NodeJsFileStateSymbol = getSymbol(getSymbols(emptyFile), `state`)
-const domExceptionPrototypeSymbolKeys = getSymbols(DOMException.prototype)
+const DOMExceptionPrototype = DOMException.prototype
+const domExceptionPrototypeSymbolKeys = getSymbols(DOMExceptionPrototype)
 const eventTargetPrototypeSymbolKeys = getSymbols(EventTarget.prototype)
 const abortSignalSymbolKeys = getSymbols(AbortSignal.prototype)
 const eventTarget = new EventTarget
@@ -103,9 +104,9 @@ const getDataViewAttributes = makeAttributeGetter({
 })
 
 const getDOMExceptionAttributes = makeAttributeGetter({
-	name: getGetter(DOMException.prototype, `name`),
-	message: getGetter(DOMException.prototype, `message`),
-	code: getGetter(DOMException.prototype, `code`)
+	name: getGetter(DOMExceptionPrototype, `name`),
+	message: getGetter(DOMExceptionPrototype, `message`),
+	code: getGetter(DOMExceptionPrototype, `code`)
 })
 
 const RequestPrototype = Request.prototype
@@ -757,7 +758,7 @@ export const toJsodd = (value: unknown, {
 					: Array.isArray(value) ?
 						Array.prototype
 					: domExceptionAttributes.length ?
-						DOMException.prototype
+						DOMExceptionPrototype
 					: stack != undefined ?
 						Error.prototype
 					: setValues ?
