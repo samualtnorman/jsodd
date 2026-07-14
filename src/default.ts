@@ -94,10 +94,12 @@ const getTypedArrayAttributes = makeAttributeGetter({
 	length: getGetter(TypedArrayPrototype, "length"),
 })
 
+const DataViewPrototype = DataView.prototype
+
 const getDataViewAttributes = makeAttributeGetter({
-	buffer: getGetter(DataView.prototype, `buffer`),
-	byteLength: getGetter(DataView.prototype, `byteLength`),
-	byteOffset: getGetter(DataView.prototype, `byteOffset`)
+	buffer: getGetter(DataViewPrototype, `buffer`),
+	byteLength: getGetter(DataViewPrototype, `byteLength`),
+	byteOffset: getGetter(DataViewPrototype, `byteOffset`)
 })
 
 const getDOMExceptionAttributes = makeAttributeGetter({
@@ -792,7 +794,7 @@ export const toJsodd = (value: unknown, {
 					: stringObjectValue != undefined ?
 						String.prototype
 					: dataViewAttributes.length ?
-						DataView.prototype
+						DataViewPrototype
 					: isWeakRef ?
 						WeakRef.prototype
 					: isPromise ?
