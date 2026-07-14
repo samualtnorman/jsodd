@@ -161,19 +161,21 @@ if (typeof PromiseRejectionEvent == `function`) {
 const getPromiseRejectionEventAttributes =
 	makeAttributeGetter({ promise: PromiseRejectionEventGetPromise, reason: PromiseRejectionEventGetReason })
 
+const EventPrototype = Event.prototype
+
 const getEventAttributes = makeAttributeGetter({
-	target: getGetter(Event.prototype, `target`),
-	currentTarget: getGetter(Event.prototype, `currentTarget`),
-	srcElement: getGetter(Event.prototype, `srcElement`),
-	type: getGetter(Event.prototype, `type`),
-	cancelable: getGetter(Event.prototype, `cancelable`),
-	defaultPrevented: getGetter(Event.prototype, `defaultPrevented`),
-	timeStamp: getGetter(Event.prototype, `timeStamp`),
-	returnValue: getGetter(Event.prototype, `returnValue`),
-	bubbles: getGetter(Event.prototype, `bubbles`),
-	composed: getGetter(Event.prototype, `composed`),
-	eventPhase: getGetter(Event.prototype, `eventPhase`),
-	cancelBubble: getGetter(Event.prototype, `cancelBubble`)
+	target: getGetter(EventPrototype, `target`),
+	currentTarget: getGetter(EventPrototype, `currentTarget`),
+	srcElement: getGetter(EventPrototype, `srcElement`),
+	type: getGetter(EventPrototype, `type`),
+	cancelable: getGetter(EventPrototype, `cancelable`),
+	defaultPrevented: getGetter(EventPrototype, `defaultPrevented`),
+	timeStamp: getGetter(EventPrototype, `timeStamp`),
+	returnValue: getGetter(EventPrototype, `returnValue`),
+	bubbles: getGetter(EventPrototype, `bubbles`),
+	composed: getGetter(EventPrototype, `composed`),
+	eventPhase: getGetter(EventPrototype, `eventPhase`),
+	cancelBubble: getGetter(EventPrototype, `cancelBubble`)
 })
 
 const ResponsePrototype = Response.prototype
@@ -815,7 +817,7 @@ export const toJsodd = (value: unknown, {
 					: promiseRejectionEventAttributes.length ?
 						PromiseRejectionEvent.prototype
 					: eventAttributes.length ?
-						Event.prototype
+						EventPrototype
 					: responseAttributes.length ?
 						Response.prototype
 					: Object.prototype
