@@ -34,20 +34,8 @@ const TypedArray = getPrototype(Uint8Array) as {
 }
 
 const GeneratorFunction = (function* () {}).constructor
-const GeneratorPrototype: object = GeneratorFunction.prototype.prototype
-const AsyncFunction = (async () => {}).constructor
-const AsyncGenerator = getPrototype((async function* () {}).prototype)!.constructor
 const arrayIterator = [].values()
-const ArrayIteratorPrototype = getPrototype(arrayIterator)!
-const StringIteratorPrototype = getPrototype(``[Symbol.iterator]())!
-const MapIteratorPrototype = getPrototype(new Map().values())!
-const SetIteratorPrototype = getPrototype(new Set().values())!
-const RegExpStringIteratorHelper = getPrototype(/a/[Symbol.matchAll](``))!
 const segments = new Intl.Segmenter().segment(``)
-const SegmentsPrototype = getPrototype(segments)!
-const SegmentsIteratorPrototype = getPrototype(segments[Symbol.iterator]())!
-const IteratorHelperPrototype = (arrayIterator.map && getPrototype(arrayIterator.map(_ => _))!) as object | undefined
-const WrapForValidIteratorPrototype = typeof Iterator == `function` ? getPrototype(Iterator.from({} as any))! : undefined
 
 const RegExpGetSource = getGetter(RegExp.prototype, `source`)
 const RegExpGetFlags = getGetter(RegExp.prototype, `flags`)
@@ -59,67 +47,25 @@ const SharedArrayBufferGetByteLength = typeof SharedArrayBuffer == `function`
 	? getGetter(SharedArrayBuffer.prototype, `byteLength`)
 	: undefined
 
-const DataViewGetBuffer = getGetter(DataView.prototype, `buffer`)
-const DataViewGetByteLength = getGetter(DataView.prototype, `byteLength`)
-const DataViewGetByteOffset = getGetter(DataView.prototype, `byteOffset`)
-
 const getRegexSource = (regex: unknown): string | undefined => RegExpGetSource && RegExpGetFlags && tryCatch(() => `/${RegExpGetSource(regex)}/${RegExpGetFlags(regex)}`)
 const getErrorStack = (error: unknown): string | undefined => tryCatch(() => ErrorGetStack?.(error))
 const getArrayBufferByteLength = (value: unknown): number | undefined => ArrayBufferGetByteLength && tryCatch(() => ArrayBufferGetByteLength(value))
 const getSharedArrayBufferByteLength = (value: unknown) => tryCatch(() => SharedArrayBufferGetByteLength?.(value) as number | undefined)
 
-const TypedArrayGetBuffer = getGetter(TypedArray.prototype, `buffer`)
-const TypedArrayGetByteLength = getGetter(TypedArray.prototype, "byteLength")
-const TypedArrayGetByteOffset = getGetter(TypedArray.prototype, "byteOffset")
-const TypedArrayGetLength = getGetter(TypedArray.prototype, "length")
 const TypedArrayGetTag = getGetter(TypedArray.prototype, Symbol.toStringTag)
 
 const emptyBlob: any = new Blob
 const nodeBlobSymbolKeys = Object.getOwnPropertySymbols(emptyBlob)
 const NodeJsBlobHandleSymbol = getSymbol(nodeBlobSymbolKeys, `kHandle`)
-const NodeJsBlobLengthSymbol = getSymbol(nodeBlobSymbolKeys, `kLength`)
-const NodeJsBlobTypeSymbol = getSymbol(nodeBlobSymbolKeys, `kType`)
-const NodeJsInternalBlob: object | undefined = NodeJsBlobHandleSymbol && emptyBlob[NodeJsBlobHandleSymbol].constructor
-const BlobGetType = getGetter(Blob.prototype, `type`)
-const BlobGetSize = getGetter(Blob.prototype, `size`)
 const emptyFile: any = new File([], ``)
 const NodeJsFileStateSymbol = getSymbol(Object.getOwnPropertySymbols(emptyFile), `state`)
-const NodeJsFileState: object | undefined = NodeJsFileStateSymbol && emptyFile[NodeJsFileStateSymbol].constructor
-const FileGetName = getGetter(File.prototype, `name`)
-const FileGetLastModified = getGetter(File.prototype, `lastModified`)
-const FileGetWebkitRelativePath = getGetter(File.prototype, `webkitRelativePath`)
-
 const domExceptionPrototypeSymbolKeys = Object.getOwnPropertySymbols(DOMException.prototype)
-const NodeJsDOMExceptionMessagingCloneSymbol = getSymbol(domExceptionPrototypeSymbolKeys, `messaging_clone_symbol`)
-const NodeJsDOMExceptionMessagingDeserializeSymbol = getSymbol(domExceptionPrototypeSymbolKeys, `messaging_deserialize_symbol`)
 const eventTargetPrototypeSymbolKeys = Object.getOwnPropertySymbols(EventTarget.prototype)
-const NodeJsEventTargetNewListenerSymbol = getSymbol(eventTargetPrototypeSymbolKeys, `kNewListener`)
-const NodeJsEventTargetRemoveListenerSymbol = getSymbol(eventTargetPrototypeSymbolKeys, `kRemoveListener`)
-const NodeJsEventTargetRemoveWeakListenerHelperSymbol = getSymbol(eventTargetPrototypeSymbolKeys, `kRemoveWeakListenerHelper`)
-const NodeJsEventTargetCreateEventSymbol = getSymbol(eventTargetPrototypeSymbolKeys, `kCreateEvent`)
-
-const abortControllerSymbolKeys = Object.getOwnPropertySymbols(AbortController)
-const NodeJsAbortControllerMakeTransferableSymbol = getSymbol(abortControllerSymbolKeys, `kMakeTransferable`)
-
 const abortSignalSymbolKeys = Object.getOwnPropertySymbols(AbortSignal.prototype)
-const NodeJsAbortSignalMessagingTransferSymbol = getSymbol(abortSignalSymbolKeys, `messaging_transfer_symbol`)
-const NodeJsAbortSignalMessagingTransferListSymbol = getSymbol(abortSignalSymbolKeys, `messaging_transfer_list_symbol`)
-
 const eventTarget = new EventTarget
 const eventTargetInstanceSymbolKeys = Object.getOwnPropertySymbols(eventTarget)
 const NodeJsEventTargetEventsSymbol = getSymbol(eventTargetInstanceSymbolKeys, `kEvents`)
-const NodeJsEventTargetEventsMaxEventTargetListenersSymbol = getSymbol(eventTargetInstanceSymbolKeys, `events.maxEventTargetListeners`)
-const NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol = getSymbol(eventTargetInstanceSymbolKeys, `events.maxEventTargetListenersWarned`)
-const NodeJsEventTargetHandlersSymbol = getSymbol(eventTargetInstanceSymbolKeys, `kHandlers`)
-
-const NodeJsSafeMap: object | undefined = NodeJsEventTargetEventsSymbol && (eventTarget as any)[NodeJsEventTargetEventsSymbol]?.constructor
-
-const eventInstance = new Event(``)
-const eventInstanceSymbolKeys = Object.getOwnPropertySymbols(eventInstance)
-const NodeJs_Event_symbol_type = getSymbol(eventInstanceSymbolKeys, `type`)
-const NodeJs_Event_symbol_kTarget = getSymbol(eventInstanceSymbolKeys, `kTarget`)
-const NodeJs_Event_symbol_kIsBeingDispatched = getSymbol(eventInstanceSymbolKeys, `kIsBeingDispatched`)
-const NodeJs_Event_symbol_kInPassiveListener = getSymbol(eventInstanceSymbolKeys, `kInPassiveListener`)
+const eventInstanceSymbolKeys = Object.getOwnPropertySymbols(new Event(``))
 
 const makeAttributeGetter = (
 	getters: Record<string, ((v: any) => any) | undefined>
@@ -130,71 +76,55 @@ const makeAttributeGetter = (
 		entries.flatMap(([ name, getter ]) => tryCatch((): [ string, any ][] => [ [ name, getter(value) ] ], () => []))
 }
 
-const getBlobAttributes = makeAttributeGetter({ size: BlobGetSize, type: BlobGetType })
+const getBlobAttributes =
+	makeAttributeGetter({ size: getGetter(Blob.prototype, `size`), type: getGetter(Blob.prototype, `type`) })
 
 const getFileAttributes = makeAttributeGetter({
-	lastModified: FileGetLastModified,
-	name: FileGetName,
-	webkitRelativePath: FileGetWebkitRelativePath
+	lastModified: getGetter(File.prototype, `lastModified`),
+	name: getGetter(File.prototype, `name`),
+	webkitRelativePath: getGetter(File.prototype, `webkitRelativePath`)
 })
 
 const getTypedArrayAttributes = makeAttributeGetter({
-	buffer: TypedArrayGetBuffer,
-	byteLength: TypedArrayGetByteLength,
-	byteOffset: TypedArrayGetByteOffset,
-	length: TypedArrayGetLength,
+	buffer: getGetter(TypedArray.prototype, `buffer`),
+	byteLength: getGetter(TypedArray.prototype, "byteLength"),
+	byteOffset: getGetter(TypedArray.prototype, "byteOffset"),
+	length: getGetter(TypedArray.prototype, "length"),
 })
 
-const getDataViewAttributes = makeAttributeGetter(
-	{ buffer: DataViewGetBuffer, byteLength: DataViewGetByteLength, byteOffset: DataViewGetByteOffset }
-)
+const getDataViewAttributes = makeAttributeGetter({
+	buffer: getGetter(DataView.prototype, `buffer`),
+	byteLength: getGetter(DataView.prototype, `byteLength`),
+	byteOffset: getGetter(DataView.prototype, `byteOffset`)
+})
 
-const DomExceptionGetName = getGetter(DOMException.prototype, `name`)
-const DomExceptionGetMessage = getGetter(DOMException.prototype, `message`)
-const DomExceptionGetCode = getGetter(DOMException.prototype, `code`)
-
-const getDOMExceptionAttributes =
-	makeAttributeGetter({ name: DomExceptionGetName, message: DomExceptionGetMessage, code: DomExceptionGetCode })
+const getDOMExceptionAttributes = makeAttributeGetter({
+	name: getGetter(DOMException.prototype, `name`),
+	message: getGetter(DOMException.prototype, `message`),
+	code: getGetter(DOMException.prototype, `code`)
+})
 
 const RequestPrototype = Request.prototype
-const RequestGetMethod = getGetter(RequestPrototype, `method`)
-const RequestGetUrl = getGetter(RequestPrototype, `url`)
-const RequestGetHeaders = getGetter(RequestPrototype, `headers`)
-const RequestGetDestination = getGetter(RequestPrototype, `destination`)
-const RequestGetReferrer = getGetter(RequestPrototype, `referrer`)
-const RequestGetReferrerPolicy = getGetter(RequestPrototype, `referrerPolicy`)
-const RequestGetMode = getGetter(RequestPrototype, `mode`)
-const RequestGetCredentials = getGetter(RequestPrototype, `credentials`)
-const RequestGetCache = getGetter(RequestPrototype, `cache`)
-const RequestGetRedirect = getGetter(RequestPrototype, `redirect`)
-const RequestGetIntegrity = getGetter(RequestPrototype, `integrity`)
-const RequestGetKeepalive = getGetter(RequestPrototype, `keepalive`)
-const RequestGetIsReloadNavigation = getGetter(RequestPrototype, `isReloadNavigation`)
-const RequestGetIsHistoryNavigation = getGetter(RequestPrototype, `isHistoryNavigation`)
-const RequestGetSignal = getGetter(RequestPrototype, `signal`)
-const RequestGetBody = getGetter(RequestPrototype, `body`)
-const RequestBodyUsed = getGetter(RequestPrototype, `bodyUsed`)
-const RequestGetDuplex = getGetter(RequestPrototype, `duplex`)
 
 const getRequestAttributes = makeAttributeGetter({
-	method: RequestGetMethod,
-	url: RequestGetUrl,
-	headers: RequestGetHeaders,
-	destination: RequestGetDestination,
-	referrer: RequestGetReferrer,
-	referrerPolicy: RequestGetReferrerPolicy,
-	mode: RequestGetMode,
-	credentials: RequestGetCredentials,
-	cache: RequestGetCache,
-	redirect: RequestGetRedirect,
-	integrity: RequestGetIntegrity,
-	keepalive: RequestGetKeepalive,
-	isReloadNavigation: RequestGetIsReloadNavigation,
-	isHistoryNavigation: RequestGetIsHistoryNavigation,
-	signal: RequestGetSignal,
-	body: RequestGetBody,
-	bodyUsed: RequestBodyUsed,
-	duplex: RequestGetDuplex
+	method: getGetter(RequestPrototype, `method`),
+	url: getGetter(RequestPrototype, `url`),
+	headers: getGetter(RequestPrototype, `headers`),
+	destination: getGetter(RequestPrototype, `destination`),
+	referrer: getGetter(RequestPrototype, `referrer`),
+	referrerPolicy: getGetter(RequestPrototype, `referrerPolicy`),
+	mode: getGetter(RequestPrototype, `mode`),
+	credentials: getGetter(RequestPrototype, `credentials`),
+	cache: getGetter(RequestPrototype, `cache`),
+	redirect: getGetter(RequestPrototype, `redirect`),
+	integrity: getGetter(RequestPrototype, `integrity`),
+	keepalive: getGetter(RequestPrototype, `keepalive`),
+	isReloadNavigation: getGetter(RequestPrototype, `isReloadNavigation`),
+	isHistoryNavigation: getGetter(RequestPrototype, `isHistoryNavigation`),
+	signal: getGetter(RequestPrototype, `signal`),
+	body: getGetter(RequestPrototype, `body`),
+	bodyUsed: getGetter(RequestPrototype, `bodyUsed`),
+	duplex: getGetter(RequestPrototype, `duplex`)
 })
 
 const PromiseThen =
@@ -226,55 +156,33 @@ if (typeof PromiseRejectionEvent == `function`) {
 const getPromiseRejectionEventAttributes =
 	makeAttributeGetter({ promise: PromiseRejectionEventGetPromise, reason: PromiseRejectionEventGetReason })
 
-const EventGetTarget = getGetter(Event.prototype, `target`)
-const EventGetCurrentTarget = getGetter(Event.prototype, `currentTarget`)
-const EventGetSrcElement = getGetter(Event.prototype, `srcElement`)
-const EventGetType = getGetter(Event.prototype, `type`)
-const EventGetCancelable = getGetter(Event.prototype, `cancelable`)
-const EventGetDefaultPrevented = getGetter(Event.prototype, `defaultPrevented`)
-const EventGetTimeStamp = getGetter(Event.prototype, `timeStamp`)
-const EventGetReturnValue = getGetter(Event.prototype, `returnValue`)
-const EventGetBubbles = getGetter(Event.prototype, `bubbles`)
-const EventGetComposed = getGetter(Event.prototype, `composed`)
-const EventGetEventPhase = getGetter(Event.prototype, `eventPhase`)
-const EventGetCancelBubble = getGetter(Event.prototype, `cancelBubble`)
-
 const getEventAttributes = makeAttributeGetter({
-	target: EventGetTarget,
-	currentTarget: EventGetCurrentTarget,
-	srcElement: EventGetSrcElement,
-	type: EventGetType,
-	cancelable: EventGetCancelable,
-	defaultPrevented: EventGetDefaultPrevented,
-	timeStamp: EventGetTimeStamp,
-	returnValue: EventGetReturnValue,
-	bubbles: EventGetBubbles,
-	composed: EventGetComposed,
-	eventPhase: EventGetEventPhase,
-	cancelBubble: EventGetCancelBubble
+	target: getGetter(Event.prototype, `target`),
+	currentTarget: getGetter(Event.prototype, `currentTarget`),
+	srcElement: getGetter(Event.prototype, `srcElement`),
+	type: getGetter(Event.prototype, `type`),
+	cancelable: getGetter(Event.prototype, `cancelable`),
+	defaultPrevented: getGetter(Event.prototype, `defaultPrevented`),
+	timeStamp: getGetter(Event.prototype, `timeStamp`),
+	returnValue: getGetter(Event.prototype, `returnValue`),
+	bubbles: getGetter(Event.prototype, `bubbles`),
+	composed: getGetter(Event.prototype, `composed`),
+	eventPhase: getGetter(Event.prototype, `eventPhase`),
+	cancelBubble: getGetter(Event.prototype, `cancelBubble`)
 })
 
 const ResponsePrototype = Response.prototype
-const ResponseGetBody = getGetter(ResponsePrototype, `body`)
-const ResponseGetBodyUsed = getGetter(ResponsePrototype, `bodyUsed`)
-const ResponseGetHeaders = getGetter(ResponsePrototype, `headers`)
-const ResponseGetOk = getGetter(ResponsePrototype, `ok`)
-const ResponseGetRedirected = getGetter(ResponsePrototype, `redirected`)
-const ResponseGetStatus = getGetter(ResponsePrototype, `status`)
-const ResponseGetStatusText = getGetter(ResponsePrototype, `statusText`)
-const ResponseGetType = getGetter(ResponsePrototype, `type`)
-const ResponseGetUrl = getGetter(ResponsePrototype, `url`)
 
 const getResponseAttributes = makeAttributeGetter({
-	body: ResponseGetBody,
-	bodyUsed: ResponseGetBodyUsed,
-	headers: ResponseGetHeaders,
-	ok: ResponseGetOk,
-	redirected: ResponseGetRedirected,
-	status: ResponseGetStatus,
-	statusText: ResponseGetStatusText,
-	type: ResponseGetType,
-	url: ResponseGetUrl
+	body: getGetter(ResponsePrototype, `body`),
+	bodyUsed: getGetter(ResponsePrototype, `bodyUsed`),
+	headers: getGetter(ResponsePrototype, `headers`),
+	ok: getGetter(ResponsePrototype, `ok`),
+	redirected: getGetter(ResponsePrototype, `redirected`),
+	status: getGetter(ResponsePrototype, `status`),
+	statusText: getGetter(ResponsePrototype, `statusText`),
+	type: getGetter(ResponsePrototype, `type`),
+	url: getGetter(ResponsePrototype, `url`)
 })
 
 const formatName = (name: string): string => /^[\w$]+$/.test(name) ? name : JSON.stringify(name)
@@ -417,48 +325,48 @@ const builtinFriendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount
 
 	queue.push(...makeFriendlyNamesQueue({
 		// Node.js Internal Symbols
-		'<Node.js Event "type" symbol>': NodeJs_Event_symbol_type,
-		'<Node.js Event "kTarget" symbol>': NodeJs_Event_symbol_kTarget,
-		'<Node.js Event "kIsBeingDispatched" symbol>': NodeJs_Event_symbol_kIsBeingDispatched,
-		'<Node.js Event "kInPassiveListener" symbol>': NodeJs_Event_symbol_kInPassiveListener,
+		'<Node.js Event "type" symbol>': getSymbol(eventInstanceSymbolKeys, `type`),
+		'<Node.js Event "kTarget" symbol>': getSymbol(eventInstanceSymbolKeys, `kTarget`),
+		'<Node.js Event "kIsBeingDispatched" symbol>': getSymbol(eventInstanceSymbolKeys, `kIsBeingDispatched`),
+		'<Node.js Event "kInPassiveListener" symbol>': getSymbol(eventInstanceSymbolKeys, `kInPassiveListener`),
 
 		...angleNames({
 			TypedArray,
 			GeneratorFunction,
-			AsyncGenerator,
-			AsyncFunction,
-			GeneratorPrototype,
-			ArrayIteratorPrototype,
-			StringIteratorPrototype,
-			MapIteratorPrototype,
-			SetIteratorPrototype,
-			IteratorHelperPrototype,
-			RegExpStringIteratorHelper,
-			SegmentsPrototype,
-			SegmentsIteratorPrototype,
-			WrapForValidIteratorPrototype,
+			AsyncGenerator: getPrototype((async function*() { }).prototype)!.constructor,
+			AsyncFunction: (async () => { }).constructor,
+			GeneratorPrototype: GeneratorFunction.prototype.prototype,
+			ArrayIteratorPrototype: getPrototype(arrayIterator)!,
+			StringIteratorPrototype: getPrototype(``[Symbol.iterator]())!,
+			MapIteratorPrototype: getPrototype(new Map().values())!,
+			SetIteratorPrototype: getPrototype(new Set().values())!,
+			IteratorHelperPrototype: (arrayIterator.map && getPrototype(arrayIterator.map(_ => _))!) as object | undefined,
+			RegExpStringIteratorHelper: getPrototype(/a/[Symbol.matchAll](``))!,
+			SegmentsPrototype: getPrototype(segments)!,
+			SegmentsIteratorPrototype: getPrototype(segments[Symbol.iterator]())!,
+			WrapForValidIteratorPrototype: typeof Iterator == `function` ? getPrototype(Iterator.from({} as any))! : undefined,
 			V8ErrorStackGetter: v8ErrorStackDescriptor?.get,
 			V8ErrorStackSetter: v8ErrorStackDescriptor?.set,
 			NodeJsBlobHandleSymbol,
-			NodeJsBlobLengthSymbol,
-			NodeJsBlobTypeSymbol,
-			NodeJsInternalBlob,
+			NodeJsBlobLengthSymbol: getSymbol(nodeBlobSymbolKeys, `kLength`),
+			NodeJsBlobTypeSymbol: getSymbol(nodeBlobSymbolKeys, `kType`),
+			NodeJsInternalBlob: NodeJsBlobHandleSymbol && emptyBlob[NodeJsBlobHandleSymbol].constructor,
 			NodeJsFileStateSymbol,
-			NodeJsFileState,
-			NodeJsDOMExceptionMessagingCloneSymbol,
-			NodeJsDOMExceptionMessagingDeserializeSymbol,
-			NodeJsEventTargetNewListenerSymbol,
-			NodeJsEventTargetRemoveListenerSymbol,
-			NodeJsEventTargetRemoveWeakListenerHelperSymbol,
-			NodeJsEventTargetCreateEventSymbol,
-			NodeJsAbortControllerMakeTransferableSymbol,
-			NodeJsAbortSignalMessagingTransferSymbol,
-			NodeJsAbortSignalMessagingTransferListSymbol,
+			NodeJsFileState: NodeJsFileStateSymbol && emptyFile[NodeJsFileStateSymbol].constructor,
+			NodeJsDOMExceptionMessagingCloneSymbol: getSymbol(domExceptionPrototypeSymbolKeys, `messaging_clone_symbol`),
+			NodeJsDOMExceptionMessagingDeserializeSymbol: getSymbol(domExceptionPrototypeSymbolKeys, `messaging_deserialize_symbol`),
+			NodeJsEventTargetNewListenerSymbol: getSymbol(eventTargetPrototypeSymbolKeys, `kNewListener`),
+			NodeJsEventTargetRemoveListenerSymbol: getSymbol(eventTargetPrototypeSymbolKeys, `kRemoveListener`),
+			NodeJsEventTargetRemoveWeakListenerHelperSymbol: getSymbol(eventTargetPrototypeSymbolKeys, `kRemoveWeakListenerHelper`),
+			NodeJsEventTargetCreateEventSymbol: getSymbol(eventTargetPrototypeSymbolKeys, `kCreateEvent`),
+			NodeJsAbortControllerMakeTransferableSymbol: getSymbol(Object.getOwnPropertySymbols(AbortController), `kMakeTransferable`),
+			NodeJsAbortSignalMessagingTransferSymbol: getSymbol(abortSignalSymbolKeys, `messaging_transfer_symbol`),
+			NodeJsAbortSignalMessagingTransferListSymbol: getSymbol(abortSignalSymbolKeys, `messaging_transfer_list_symbol`),
 			NodeJsEventTargetEventsSymbol,
-			NodeJsEventTargetEventsMaxEventTargetListenersSymbol,
-			NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol,
-			NodeJsEventTargetHandlersSymbol,
-			NodeJsSafeMap
+			NodeJsEventTargetEventsMaxEventTargetListenersSymbol: getSymbol(eventTargetInstanceSymbolKeys, `events.maxEventTargetListeners`),
+			NodeJsEventTargetEventsMaxEventTargetListenersWarnedSymbol: getSymbol(eventTargetInstanceSymbolKeys, `events.maxEventTargetListenersWarned`),
+			NodeJsEventTargetHandlersSymbol: getSymbol(eventTargetInstanceSymbolKeys, `kHandlers`),
+			NodeJsSafeMap: NodeJsEventTargetEventsSymbol && (eventTarget as any)[NodeJsEventTargetEventsSymbol]?.constructor
 		})
 	}, builtinFriendlyNames))
 
