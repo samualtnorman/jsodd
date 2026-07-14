@@ -1228,7 +1228,7 @@ if (import.meta.vitest) {
 		`)
 	})
 
-	test(`prototypeless map`, () => {
+	test(`prototype-less map`, () => {
 		expect(toJsodd(Object.setPrototypeOf(new Map([ [ "foo", "bar" ] ]), null))).toMatchInlineSnapshot(`
 			"Map {
 				<entry 0 key>: "foo"
@@ -1339,7 +1339,7 @@ if (import.meta.vitest) {
 		`)
 	})
 
-	test(`function with overriden name and length`, () => {
+	test(`function with overridden name and length`, () => {
 		expect(toJsodd(Object.defineProperties(() => {}, {
 			name: { get: () => {} },
 			length: { get: () => {} }
