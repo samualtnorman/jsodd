@@ -4,6 +4,7 @@ import type { AnyFunction, LaxPartial } from "@samual/types"
 const getDescriptor = Reflect.getOwnPropertyDescriptor
 const isExtensible = Reflect.isExtensible
 const getKeys = Reflect.ownKeys
+const getSymbols = Object.getOwnPropertySymbols
 
 const isFunction = (value: unknown): value is AnyFunction => typeof value == `function`
 const isObject = (value: unknown): value is object => typeof value == `object` ? !!value : isFunction(value)
@@ -55,17 +56,17 @@ const getSharedArrayBufferByteLength = (value: unknown) => tryCatch(() => Shared
 const TypedArrayGetTag = getGetter(TypedArray.prototype, Symbol.toStringTag)
 
 const emptyBlob: any = new Blob
-const nodeBlobSymbolKeys = Object.getOwnPropertySymbols(emptyBlob)
+const nodeBlobSymbolKeys = getSymbols(emptyBlob)
 const NodeJsBlobHandleSymbol = getSymbol(nodeBlobSymbolKeys, `kHandle`)
 const emptyFile: any = new File([], ``)
-const NodeJsFileStateSymbol = getSymbol(Object.getOwnPropertySymbols(emptyFile), `state`)
-const domExceptionPrototypeSymbolKeys = Object.getOwnPropertySymbols(DOMException.prototype)
-const eventTargetPrototypeSymbolKeys = Object.getOwnPropertySymbols(EventTarget.prototype)
-const abortSignalSymbolKeys = Object.getOwnPropertySymbols(AbortSignal.prototype)
+const NodeJsFileStateSymbol = getSymbol(getSymbols(emptyFile), `state`)
+const domExceptionPrototypeSymbolKeys = getSymbols(DOMException.prototype)
+const eventTargetPrototypeSymbolKeys = getSymbols(EventTarget.prototype)
+const abortSignalSymbolKeys = getSymbols(AbortSignal.prototype)
 const eventTarget = new EventTarget
-const eventTargetInstanceSymbolKeys = Object.getOwnPropertySymbols(eventTarget)
+const eventTargetInstanceSymbolKeys = getSymbols(eventTarget)
 const NodeJsEventTargetEventsSymbol = getSymbol(eventTargetInstanceSymbolKeys, `kEvents`)
-const eventInstanceSymbolKeys = Object.getOwnPropertySymbols(new Event(``))
+const eventInstanceSymbolKeys = getSymbols(new Event(``))
 
 const makeAttributeGetter = (
 	getters: Record<string, ((v: any) => any) | undefined>
@@ -359,7 +360,7 @@ const builtinFriendlyNames: FriendlyNames = { map: new Map, symbolReferenceCount
 			NodeJsEventTargetRemoveListenerSymbol: getSymbol(eventTargetPrototypeSymbolKeys, `kRemoveListener`),
 			NodeJsEventTargetRemoveWeakListenerHelperSymbol: getSymbol(eventTargetPrototypeSymbolKeys, `kRemoveWeakListenerHelper`),
 			NodeJsEventTargetCreateEventSymbol: getSymbol(eventTargetPrototypeSymbolKeys, `kCreateEvent`),
-			NodeJsAbortControllerMakeTransferableSymbol: getSymbol(Object.getOwnPropertySymbols(AbortController), `kMakeTransferable`),
+			NodeJsAbortControllerMakeTransferableSymbol: getSymbol(getSymbols(AbortController), `kMakeTransferable`),
 			NodeJsAbortSignalMessagingTransferSymbol: getSymbol(abortSignalSymbolKeys, `messaging_transfer_symbol`),
 			NodeJsAbortSignalMessagingTransferListSymbol: getSymbol(abortSignalSymbolKeys, `messaging_transfer_list_symbol`),
 			NodeJsEventTargetEventsSymbol,
