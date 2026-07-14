@@ -53,7 +53,8 @@ const getErrorStack = (error: unknown): string | undefined => tryCatch(() => Err
 const getArrayBufferByteLength = (value: unknown): number | undefined => ArrayBufferGetByteLength && tryCatch(() => ArrayBufferGetByteLength(value))
 const getSharedArrayBufferByteLength = (value: unknown) => tryCatch(() => SharedArrayBufferGetByteLength?.(value) as number | undefined)
 
-const TypedArrayGetTag = getGetter(TypedArray.prototype, Symbol.toStringTag)
+const TypedArrayPrototype = TypedArray.prototype
+const TypedArrayGetTag = getGetter(TypedArrayPrototype, Symbol.toStringTag)
 
 const emptyBlob: any = new Blob
 const nodeBlobSymbolKeys = getSymbols(emptyBlob)
@@ -87,10 +88,10 @@ const getFileAttributes = makeAttributeGetter({
 })
 
 const getTypedArrayAttributes = makeAttributeGetter({
-	buffer: getGetter(TypedArray.prototype, `buffer`),
-	byteLength: getGetter(TypedArray.prototype, "byteLength"),
-	byteOffset: getGetter(TypedArray.prototype, "byteOffset"),
-	length: getGetter(TypedArray.prototype, "length"),
+	buffer: getGetter(TypedArrayPrototype, `buffer`),
+	byteLength: getGetter(TypedArrayPrototype, "byteLength"),
+	byteOffset: getGetter(TypedArrayPrototype, "byteOffset"),
+	length: getGetter(TypedArrayPrototype, "length"),
 })
 
 const getDataViewAttributes = makeAttributeGetter({
@@ -1281,7 +1282,7 @@ if (import.meta.vitest) {
 	})
 
 	test(`referencing builtin symbol key getter`, () => {
-		expect(toJsodd(getDescriptor(TypedArray.prototype, Symbol.toStringTag))).toMatchInlineSnapshot(`
+		expect(toJsodd(getDescriptor(TypedArrayPrototype, Symbol.toStringTag))).toMatchInlineSnapshot(`
 			"{
 				get: <TypedArray>.prototype.<get [Symbol.toStringTag]>
 				set: undefined
